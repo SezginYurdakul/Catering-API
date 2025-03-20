@@ -23,15 +23,26 @@ try {
     // Initialize the Db class with the connection
     $db = new Db($connection);
 
-    // Read the SQL script file
+    // Read the Create Table SQL script file
     $sqlFile = __DIR__ . '/create_tables.sql';
     $sql = file_get_contents($sqlFile);
 
-    // Execute the SQL script
+    // Execute the Create Table SQL script
+    $db->executeQuery($sql);
+
+    // Read Seed Tables SQL script file
+    $sqlFile = __DIR__ . '/seed_tables.sql';
+    $sql = file_get_contents($sqlFile);
+
+    // Execute the Seed Tables SQL script
     $db->executeQuery($sql);
 
     echo "Database tables created successfully!";
 } catch (PDOException $e) {
-    // Handle any errors during the process
+    // Handle any database errors
+    echo "Error: " . $e->getMessage();
+}
+catch (Exception $e) {
+    // Handle any other errors
     echo "Error: " . $e->getMessage();
 }
