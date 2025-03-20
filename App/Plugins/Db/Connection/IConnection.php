@@ -22,4 +22,18 @@ interface IConnection {
      * @return string
      */
     function getDbName(): string;
+
+    /**
+     * Function to get the username
+     * @return string
+     */
+
+    function getUsername(): string;
+
+    /**
+     * Function to get the password
+     * @return string
+     */
+
+    function getPassword(): string;
 }
