@@ -1,0 +1,13 @@
+# Ignore environment file
+.env
+
+# Ignore documents folder
+documents/
+
+# Ignore vendor folder 
+vendor/
+
+# Ignore system files and temporary files
+*.log
+*.tmp
+.DS_Store

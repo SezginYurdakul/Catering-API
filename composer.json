@@ -1,0 +1,14 @@
+{
+  "name": "dttmultimedia/web_backend_test_catering_api",
+  "description": "PHP skeleton project for the DTT back end assessment – Catering API",
+  "autoload": {
+    "psr-4": {
+      "App\\": "App/"
+    }
+  },
+  "require": {
+    "bramus/router": "^1.6",
+    "ext-pdo": "*",
+    "vlucas/phpdotenv": "^5.6"
+  }
+}
