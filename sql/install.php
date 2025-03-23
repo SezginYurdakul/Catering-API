@@ -1,48 +1,37 @@
 <?php
 
 require_once __DIR__ . '/../vendor/autoload.php'; // Autoload all classes
+require_once __DIR__ . '/../config/services.php'; // Include services.php
 
-use App\Plugins\Db\Db;
-use App\Plugins\Db\Connection\Mysql;
-use Dotenv\Dotenv;
+use App\Services\DatabaseInstaller;
+use App\Plugins\Di\Factory;
 
 try {
-    // Load environment variables from .env
-    $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-    $dotenv->load();
+    // Get the Logger from the DI container
+    $logger = Factory::getDi()->getShared('logger');
+    $logger->info('Starting database installation process.');
 
-    // Get database credentials from environment variables
-    $host = $_ENV['DB_HOST'];
-    $dbName = $_ENV['DB_DATABASE'];
-    $username = $_ENV['DB_USERNAME'];
-    $password = $_ENV['DB_PASSWORD'];
+    // Get the Db service from the DI container
+    $db = Factory::getDi()->getShared('db');
+    $logger->info('Database connection retrieved from DI container.');
 
-    // Create a MySQL connection instance
-    $connection = new Mysql($host, $dbName, $username, $password);
+    // Initialize the DatabaseInstaller
+    $installer = new DatabaseInstaller($db);
 
-    // Initialize the Db class with the connection
-    $db = new Db($connection);
+    // Run the installer to create tables and seed data
+    $installer->run(__DIR__ . '/create_tables.sql', __DIR__ . '/seed_tables.sql');
 
-    // Read the Create Table SQL script file
-    $sqlFile = __DIR__ . '/create_tables.sql';
-    $sql = file_get_contents($sqlFile);
-
-    // Execute the Create Table SQL script
-    $db->executeQuery($sql);
-
-    // Read Seed Tables SQL script file
-    $sqlFile = __DIR__ . '/seed_tables.sql';
-    $sql = file_get_contents($sqlFile);
-
-    // Execute the Seed Tables SQL script
-    $db->executeQuery($sql);
-
-    echo "Database tables created successfully!";
+    echo "Database tables created and seeded successfully!";
+    // Log the success message
+    $logger->info('Database tables created and seeded successfully.');
 } catch (PDOException $e) {
     // Handle any database errors
     echo "Error: " . $e->getMessage();
-}
-catch (Exception $e) {
+    // Log the database error
+    $logger->error('Database Error: ' . $e->getMessage());
+} catch (Exception $e) {
     // Handle any other errors
     echo "Error: " . $e->getMessage();
+    // Log the error
+    $logger->error('Error: ' . $e->getMessage());
 }
