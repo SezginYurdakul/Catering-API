@@ -16,3 +16,10 @@ $router->get('/locations/(\d+)', App\Controllers\LocationController::class . '@g
 $router->post('/locations', App\Controllers\LocationController::class . '@createLocation');
 $router->put('/locations/(\d+)', App\Controllers\LocationController::class . '@updateLocation');
 $router->delete('/locations/(\d+)', App\Controllers\LocationController::class . '@deleteLocation');
+
+// Tag Routes
+$router->get('/tags', App\Controllers\TagController::class . '@getAllTags');
+$router->get('/tags/(\d+)', App\Controllers\TagController::class . '@getTagById');
+$router->post('/tags', App\Controllers\TagController::class . '@createTag');
+$router->put('/tags/(\d+)', App\Controllers\TagController::class . '@updateTag');
+$router->delete('/tags/(\d+)', App\Controllers\TagController::class . '@deleteTag');
