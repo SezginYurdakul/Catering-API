@@ -70,8 +70,13 @@ $di->setShared('db', function () use ($config) {
     }
 });
 
-// Add FacilityService to the DI container
+// Add FacilityService, LocationService to the DI container
 $di->setShared('facilityService', function () use ($di) {
     $db = $di->getShared('db');
     return new \App\Services\FacilityService($db);
+});
+
+$di->setShared('locationService', function () use ($di) {
+    $db = $di->getShared('db');
+    return new \App\Services\LocationService($db);
 });

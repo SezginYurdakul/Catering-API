@@ -9,3 +9,10 @@ $router->get('/facilities/(\d+)', App\Controllers\FacilityController::class . '@
 $router->post('/facilities', App\Controllers\FacilityController::class . '@createFacility');
 $router->put('/facilities/(\d+)', App\Controllers\FacilityController::class . '@updateFacility');
 $router->delete('/facilities/(\d+)', App\Controllers\FacilityController::class . '@deleteFacility');
+
+// Location Routes
+$router->get('/locations', App\Controllers\LocationController::class . '@getAllLocations');
+$router->get('/locations/(\d+)', App\Controllers\LocationController::class . '@getLocationById');
+$router->post('/locations', App\Controllers\LocationController::class . '@createLocation');
+$router->put('/locations/(\d+)', App\Controllers\LocationController::class . '@updateLocation');
+$router->delete('/locations/(\d+)', App\Controllers\LocationController::class . '@deleteLocation');
