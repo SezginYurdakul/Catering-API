@@ -5,6 +5,7 @@ require_once '../vendor/autoload.php';
 use App\Plugins;
 use App\Plugins\Di\Factory;
 use App\Helpers\Logger;
+use Bramus\Router\Router;
 
 $di = Factory::getDi();
 $config = require __DIR__ . '/config.php';
@@ -26,6 +27,11 @@ if (!file_exists($logFile)) {
 // Add Logger to the DI container
 $di->setShared('logger', function () use ($logFile) {
     return new App\Helpers\Logger($logFile);
+});
+
+// Add Router to the DI container
+$di->setShared('router', function () {
+    return new Router();
 });
 
 // Add Db to the DI container
@@ -62,4 +68,10 @@ $di->setShared('db', function () use ($config) {
         $logger->error('Failed to initialize the database connection: ' . $e->getMessage());
         throw $e;
     }
+});
+
+// Add FacilityService to the DI container
+$di->setShared('facilityService', function () use ($di) {
+    $db = $di->getShared('db');
+    return new \App\Services\FacilityService($db);
 });

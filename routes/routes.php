@@ -1,7 +1,11 @@
 <?php
 
 /** @var Bramus\Router\Router $router */
+$router = App\Plugins\Di\Factory::getDi()->getShared('router');
 
-// Define routes here
-$router->get('/test', App\Controllers\IndexController::class . '@test');
-$router->get('/', App\Controllers\IndexController::class . '@test');
+// Facility routes
+$router->get('/facilities', App\Controllers\FacilityController::class . '@getAllFacilities');
+$router->get('/facilities/(\d+)', App\Controllers\FacilityController::class . '@getFacilityById');
+$router->post('/facilities', App\Controllers\FacilityController::class . '@createFacility');
+$router->put('/facilities/(\d+)', App\Controllers\FacilityController::class . '@updateFacility');
+$router->delete('/facilities/(\d+)', App\Controllers\FacilityController::class . '@deleteFacility');
