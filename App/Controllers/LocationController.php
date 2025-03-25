@@ -13,6 +13,7 @@ use App\Plugins\Http\Response\NoContent;
 use App\Plugins\Http\Response\NotFound;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
+use App\Middleware\AuthMiddleware;
 
 class LocationController
 {
@@ -24,6 +25,8 @@ class LocationController
     public function __construct()
     {
         $this->locationService = Factory::getDi()->getShared('locationService');
+        $authMiddleware = new AuthMiddleware();
+        $authMiddleware->handle();
     }
 
     /**
@@ -34,6 +37,9 @@ class LocationController
     public function getAllLocations()
     {
         try {
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             // Get pagination parameters from the request
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
             $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
@@ -42,7 +48,7 @@ class LocationController
             $locations = $this->locationService->getAllLocations($page, $perPage);
     
             // Send the response
-            $response = new Ok($locations); // 200 OK response
+            $response = new Ok(['user'=>$currentUser,'locations'=>$locations]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -59,6 +65,8 @@ class LocationController
     public function getLocationById($id)
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $location = $this->locationService->getLocationById((int) $id);
 
             if (!$location) {
@@ -67,7 +75,10 @@ class LocationController
                 return;
             }
 
-            $response = new Ok($location); // 200 OK response
+             $response = new Ok([
+                'user' => $currentUser,
+                'facility' => $location
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -84,6 +95,8 @@ class LocationController
     public function createLocation()
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (
@@ -105,7 +118,7 @@ class LocationController
             );
 
             $result = $this->locationService->createLocation($location);
-            $response = new Created($result); // 201 Created response
+            $response = new Created(['user' => $currentUser,'result'=>$result]); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -123,6 +136,8 @@ class LocationController
     public function updateLocation($id)
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             // Check if at least one field is provided
@@ -160,7 +175,7 @@ class LocationController
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
+            $response = new Ok(['user' => $currentUser,'result'=>$result]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error

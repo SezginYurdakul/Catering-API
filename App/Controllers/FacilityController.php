@@ -13,6 +13,7 @@ use App\Plugins\Http\Response\NotFound;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
 use App\Services\IFacilityService;
+use App\Middleware\AuthMiddleware;
 
 class FacilityController
 {
@@ -24,6 +25,8 @@ class FacilityController
     public function __construct()
     {
         $this->facilityService = Factory::getDi()->getShared('facilityService');
+        $authMiddleware = new AuthMiddleware();
+        $authMiddleware->handle();
     }
 
     /**
@@ -34,6 +37,9 @@ class FacilityController
     public function getAllFacilities()
     {
         try {
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             // Get pagination parameters from the request
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
             $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
@@ -42,7 +48,10 @@ class FacilityController
             $facilities = $this->facilityService->getAllFacilities($page, $perPage);
 
             // Send the response
-            $response = new Ok($facilities); // 200 OK response
+            $response = new Ok([
+                'user' => $currentUser,
+                'facilities' => $facilities
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -60,6 +69,8 @@ class FacilityController
     public function getFacilityById($id)
     {
         try {
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
 
             $facility = $this->facilityService->getFacilityById((int) $id);
 
@@ -69,7 +80,10 @@ class FacilityController
                 return;
             }
 
-            $response = new Ok($facility); // 200 OK response
+            $response = new Ok([
+                'user' => $currentUser,
+                'facility' => $facility
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -88,6 +102,8 @@ class FacilityController
     public function createFacility(): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['name']) || empty($data['location_id'])) {
@@ -106,7 +122,7 @@ class FacilityController
 
             $result = $this->facilityService->createFacility($facility);
 
-            $response = new Created($result); // 201 Created response
+            $response = new Created(['user' => $currentUser,'result'=>$result]); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -125,6 +141,8 @@ class FacilityController
     {
         try {
             $id = (int) $id;
+
+            $currentUser = $_SESSION['user'] ?? 'Guest';
 
             $data = json_decode(file_get_contents('php://input'), true);
 
@@ -152,7 +170,7 @@ class FacilityController
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
+            $response = new Ok(['user' => $currentUser,'result'=>$result]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -202,6 +220,8 @@ class FacilityController
      */ public function searchFacilities(): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $query = $_GET['query'] ?? '';
             $filter = $_GET['filter'] ?? '';
 
@@ -213,7 +233,7 @@ class FacilityController
 
             $facilities = $this->facilityService->searchFacilities($query, $filter);
 
-            $response = new Ok($facilities); // 200 OK response
+            $response = new Ok(['user'=>$currentUser,'faclities'=>$facilities]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error

@@ -42,3 +42,7 @@ $router->delete('/tags/(\d+)',       TagController::class . '@deleteTag');
 // - filter=tag: Search by tag name
 // If no filter is specified, a general search is performed across all fields.
 $router->get('/facilities/search', FacilityController::class . '@searchFacilities');
+
+
+// Auth routes
+$router->post('/auth/login', 'App\Controllers\AuthController@login');
