@@ -164,6 +164,8 @@ class FacilityController
     public function deleteFacility($id): void
     {
         try {
+            $id = (int) $id;
+
             $existingFacility = $this->facilityService->getFacilityById($id);
 
             $result = $this->facilityService->deleteFacility($existingFacility);

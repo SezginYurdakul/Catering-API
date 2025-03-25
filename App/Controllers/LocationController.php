@@ -118,22 +118,31 @@ class LocationController
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
+            // Check if at least one field is provided
             if (
-                empty($data['city']) || empty($data['address']) || empty($data['zip_code']) ||
-                empty($data['country_code']) || empty($data['phone_number'])
+                empty($data['city']) && empty($data['address']) && empty($data['zip_code']) &&
+                empty($data['country_code']) && empty($data['phone_number'])
             ) {
-                $errorResponse = new BadRequest("All fields are required."); // 400 Bad Request
+                $errorResponse = new BadRequest("At least one field is required to update the location."); // 400 Bad Request
+                $errorResponse->send();
+                return;
+            }
+
+            // Fetch the existing location to ensure it exists
+            $existingLocation = $this->locationService->getLocationById((int) $id);
+            if (!$existingLocation) {
+                $errorResponse = new NotFound("Location with ID $id not found."); // 404 Not Found
                 $errorResponse->send();
                 return;
             }
 
             $location = new Location(
                 (int) $id,
-                $data['city'],
-                $data['address'],
-                $data['zip_code'],
-                $data['country_code'],
-                $data['phone_number']
+                $data['city'] ?? $existingLocation->city,
+                $data['address'] ?? $existingLocation->address,
+                $data['zip_code'] ?? $existingLocation->zip_code,
+                $data['country_code'] ?? $existingLocation->country_code,
+                $data['phone_number'] ?? $existingLocation->phone_number
             );
 
             $result = $this->locationService->updateLocation($location);

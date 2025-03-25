@@ -95,7 +95,16 @@ class LocationService implements ILocationService
         ]);
 
         // Map the sanitized data to an array of fields and bindings
-        $mappedData = $this->mapLocationToUpdateFields((object) $sanitizedData);
+        $locationObject = new Location(
+            $location->id,
+            $sanitizedData['city'] ?? null,
+            $sanitizedData['address'] ?? null,
+            $sanitizedData['zip_code'] ?? null,
+            $sanitizedData['country_code'] ?? null,
+            $sanitizedData['phone_number'] ?? null
+        );
+
+        $mappedData = $this->mapLocationToUpdateFields($locationObject);
 
         if (empty($mappedData['fields'])) {
             throw new \Exception("No valid fields provided for update.");
