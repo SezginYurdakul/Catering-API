@@ -1,11 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
+namespace App\Services;
+
 require_once '../vendor/autoload.php';
 
 use App\Plugins;
 use App\Plugins\Di\Factory;
 use App\Helpers\Logger;
 use Bramus\Router\Router;
+use App\Services\CustomDb;
+use Exception;
 
 $di = Factory::getDi();
 $config = require __DIR__ . '/config.php';
@@ -26,7 +32,7 @@ if (!file_exists($logFile)) {
 
 // Add Logger to the DI container
 $di->setShared('logger', function () use ($logFile) {
-    return new App\Helpers\Logger($logFile);
+    return new Logger($logFile);
 });
 
 // Add Router to the DI container
@@ -61,7 +67,7 @@ $di->setShared('db', function () use ($config) {
         );
 
         // Create the CustomDb instance
-        $db = new App\Services\CustomDb($connectionInterface);
+        $db = new CustomDb($connectionInterface);
 
         return $db;
     } catch (Exception $e) {
