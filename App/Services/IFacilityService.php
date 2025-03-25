@@ -10,10 +10,11 @@ interface IFacilityService
 {
     /**
      * Get all facilities.
-     *
+     *@param int $page
+     *@param int $perPage
      * @return array
      */
-    public function getAllFacilities(): array;
+    public function getAllFacilities(int $page, int $perPage): array;
 
     /**
      * Get a facility by its ID.

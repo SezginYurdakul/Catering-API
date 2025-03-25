@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Services\CustomDb;
 use PDO;
 use App\Helpers\InputSanitizer;
+use App\Helpers\PaginationHelper;
 
 class FacilityService implements IFacilityService
 {
@@ -21,8 +22,12 @@ class FacilityService implements IFacilityService
     }
 
     // Get all facilities
-    public function getAllFacilities(): array
+    public function getAllFacilities(int $page = 1, int $perPage = 10): array
     {
+        // Calculate offset and limit
+        $offset = ($page - 1) * $perPage;
+    
+        // Query to get facilities with pagination
         $query = "
             SELECT 
                 f.id AS facility_id, 
@@ -38,11 +43,18 @@ class FacilityService implements IFacilityService
                 Tags t ON ft.tag_id = t.id
             GROUP BY 
                 f.id
+            LIMIT $perPage OFFSET $offset
         ";
-
+    
+        // Execute the query
         $stmt = $this->db->executeSelectQuery($query);
         $facilitiesData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
+        // Query to get the total number of facilities
+        $countQuery = "SELECT COUNT(*) AS total FROM Facilities";
+        $countStmt = $this->db->executeSelectQuery($countQuery);
+        $totalItems = (int) $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
         // Map each facility to the Facility model
         $facilities = array_map(function ($facilityData) {
             $tags = $facilityData['tags'] ? explode(',', $facilityData['tags']) : [];
@@ -54,8 +66,14 @@ class FacilityService implements IFacilityService
                 $tags // Pass the tags as an array
             );
         }, $facilitiesData);
-
-        return $facilities;
+    
+        // Generate pagination metadata
+        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+    
+        return [
+            'facilities' => $facilities,
+            'pagination' => $pagination
+        ];
     }
 
     // Get a single facility by ID
@@ -198,7 +216,7 @@ class FacilityService implements IFacilityService
             }
 
             // Update facility tags relation
-            if ($facility->tags !== []) {
+            if ($facility->tags !== null) {
                 $this->manageFacilityTags($facility->id, $facility->tags);
             }
 

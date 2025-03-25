@@ -11,10 +11,11 @@ interface ILocationService
     /**
      * Get all locations.
      * Retrieves a list of all locations.
-     *
+     *@param int $page 
+     *@param int $perPage
      * @return array An array of Location objects.
      */
-    public function getAllLocations(): array;
+    public function getAllLocations(int $page, int $perPage): array;
 
     /**
      * Get a location by its ID.

@@ -8,6 +8,7 @@ use App\Models\Tag;
 use App\Services\CustomDb;
 use PDO;
 use App\Helpers\InputSanitizer;
+use App\Helpers\PaginationHelper;
 
 class TagService implements ITagService
 {
@@ -18,15 +19,39 @@ class TagService implements ITagService
         $this->db = $db;
     }
 
-    public function getAllTags(): array
+    /**
+     * Get all tags
+     * @param int $page
+     * @param int $perPage
+     * @return array{pagination: array, tags: Tag[]}
+     */
+    public function getAllTags(int $page = 1, int $perPage = 10): array
     {
-        $query = "SELECT * FROM Tags";
+        $offset = ($page - 1) * $perPage;
+
+        $query = "
+            SELECT * 
+            FROM Tags
+            LIMIT $perPage OFFSET $offset
+        ";
+
         $stmt = $this->db->executeSelectQuery($query);
         $tagsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(function ($tagData) {
+        $countQuery = "SELECT COUNT(*) AS total FROM Tags";
+        $countStmt = $this->db->executeSelectQuery($countQuery);
+        $totalItems = (int) $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        $tags = array_map(function ($tagData) {
             return new Tag($tagData['id'], $tagData['name']);
         }, $tagsData);
+
+        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+
+        return [
+            'tags' => $tags,
+            'pagination' => $pagination
+        ];
     }
 
     public function getTagById(int $id): Tag

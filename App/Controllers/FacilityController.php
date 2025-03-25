@@ -34,7 +34,14 @@ class FacilityController
     public function getAllFacilities()
     {
         try {
-            $facilities = $this->facilityService->getAllFacilities();
+            // Get pagination parameters from the request
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+
+            // Call the service method with pagination
+            $facilities = $this->facilityService->getAllFacilities($page, $perPage);
+
+            // Send the response
             $response = new Ok($facilities); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
@@ -42,6 +49,7 @@ class FacilityController
             $errorResponse->send();
         }
     }
+
 
     /**
      * Get a specific facility by its ID.

@@ -36,7 +36,11 @@ class TagController
     public function getAllTags(): void
     {
         try {
-            $tags = $this->tagService->getAllTags();
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+    
+            $tags = $this->tagService->getAllTags($page, $perPage);
+    
             $response = new Ok($tags); // 200 OK response
             $response->send();
         } catch (\Exception $e) {

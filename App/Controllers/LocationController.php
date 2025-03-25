@@ -34,7 +34,14 @@ class LocationController
     public function getAllLocations()
     {
         try {
-            $locations = $this->locationService->getAllLocations();
+            // Get pagination parameters from the request
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+    
+            // Call the service method with pagination
+            $locations = $this->locationService->getAllLocations($page, $perPage);
+    
+            // Send the response
             $response = new Ok($locations); // 200 OK response
             $response->send();
         } catch (\Exception $e) {

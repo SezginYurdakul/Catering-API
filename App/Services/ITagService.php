@@ -11,10 +11,11 @@ interface ITagService
     /**
      * Get all tags.
      * Retrieves a list of all tags.
-     *
+     *@param int $page
+     *@param int $perPage
      * @return array An array of Tag objects.
      */
-    public function getAllTags(): array;
+    public function getAllTags(int $page, int $perPage): array;
 
     /**
      * Get a tag by its ID.

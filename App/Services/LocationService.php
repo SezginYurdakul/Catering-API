@@ -6,6 +6,7 @@ use App\Models\Location;
 use App\Services\CustomDb;
 use PDO;
 use App\Helpers\InputSanitizer;
+use App\Helpers\PaginationHelper;
 
 class LocationService implements ILocationService
 {
@@ -16,13 +17,29 @@ class LocationService implements ILocationService
         $this->db = $db;
     }
 
-    public function getAllLocations(): array
+    /**
+     * Get all locations
+     * @param int $page
+     * @param int $perPage
+     * @return array{locations: Location[], pagination: array}
+     */
+    public function getAllLocations(int $page = 1, int $perPage = 10): array
     {
-        $query = "SELECT * FROM Locations";
+        $offset = ($page - 1) * $perPage;
+        $query = "
+        SELECT * 
+        FROM Locations
+        LIMIT $perPage OFFSET $offset
+    ";
+
         $stmt = $this->db->executeSelectQuery($query);
         $locationsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(function ($locationData) {
+        $countQuery = "SELECT COUNT(*) AS total FROM Locations";
+        $countStmt = $this->db->executeSelectQuery($countQuery);
+        $totalItems = (int) $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        $locations = array_map(function ($locationData) {
             return new Location(
                 $locationData['id'],
                 $locationData['city'],
@@ -32,8 +49,21 @@ class LocationService implements ILocationService
                 $locationData['phone_number']
             );
         }, $locationsData);
+
+        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+
+        return [
+            'locations' => $locations,
+            'pagination' => $pagination
+        ];
     }
 
+    /**
+     * Get one location by its ID
+     * @param int $id
+     * @throws \Exception
+     * @return Location
+     */
     public function getLocationById(int $id): Location
     {
         $query = "SELECT * FROM Locations WHERE id = :id";
@@ -54,6 +84,12 @@ class LocationService implements ILocationService
         );
     }
 
+    /**
+     * Create a new location
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function createLocation(Location $location): string
     {
         // Sanitize client data
@@ -83,6 +119,12 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to create the location.");
     }
 
+    /**
+     * Update an existing location
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function updateLocation(Location $location): string
     {
         // Sanitize client data
@@ -123,6 +165,12 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to update the location with ID {$location->id}.");
     }
 
+    /**
+     * Delete an existing location
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function deleteLocation(Location $location): string
     {
         $query = "DELETE FROM Locations WHERE id = :id";
@@ -136,6 +184,11 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to delete the location with ID {$location->id}.");
     }
 
+    /**
+     * Map the location object to an array of fields and bindings for update
+     * @param Location $location
+     * @return array
+     */
     private function mapLocationToUpdateFields(Location $location): array
     {
         $fields = [];
@@ -154,6 +207,11 @@ class LocationService implements ILocationService
     }
 
 
+    /**
+     * Check if a location is used by any facilities
+     * @param int $locationId
+     * @return bool
+     */
     public function isLocationUsedByFacilities(int $locationId): bool
     {
         $query = "SELECT COUNT(*) FROM Facilities WHERE location_id = :location_id";
