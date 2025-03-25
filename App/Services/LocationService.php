@@ -77,21 +77,21 @@ class LocationService implements ILocationService
     {
         // Map the Location object to an array of fields and bindings
         $mappedData = $this->mapLocationToUpdateFields($location);
-    
+
         if (empty($mappedData['fields'])) {
             throw new \Exception("No valid fields provided for update.");
         }
-    
+
         $query = "UPDATE Locations SET " . implode(", ", $mappedData['fields']) . " WHERE id = :id";
         $mappedData['bind'][':id'] = $location->id;
-    
+
         // Execute the query
         $result = $this->db->executeQuery($query, $mappedData['bind']);
-    
+
         if ($result) {
             return "Location with ID {$location->id} successfully updated.";
         }
-    
+
         throw new \Exception("Failed to update the location with ID {$location->id}.");
     }
 
@@ -109,19 +109,29 @@ class LocationService implements ILocationService
     }
 
     private function mapLocationToUpdateFields(Location $location): array
-{
-    $fields = [];
-    $bind = [];
+    {
+        $fields = [];
+        $bind = [];
 
-    // Get all properties of the Location model
-    foreach (get_object_vars($location) as $property => $value) {
-        // Skip null or empty values
-        if (!empty($value) && $property !== 'id') {
-            $fields[] = "$property = :$property";
-            $bind[":$property"] = $value;
+        // Get all properties of the Location model
+        foreach (get_object_vars($location) as $property => $value) {
+            // Skip null or empty values
+            if (!empty($value) && $property !== 'id') {
+                $fields[] = "$property = :$property";
+                $bind[":$property"] = $value;
+            }
         }
+
+        return ['fields' => $fields, 'bind' => $bind];
     }
 
-    return ['fields' => $fields, 'bind' => $bind];
-}
+
+    public function isLocationUsedByFacilities(int $locationId): bool
+    {
+        $query = "SELECT COUNT(*) FROM Facilities WHERE location_id = :location_id";
+        $stmt = $this->db->executeSelectQuery($query, [':location_id' => $locationId]);
+        $count = $stmt->fetchColumn();
+
+        return $count > 0;
+    }
 }

@@ -1,10 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+namespace sql;
+
 require_once __DIR__ . '/../vendor/autoload.php'; // Autoload all classes
 require_once __DIR__ . '/../config/services.php'; // Include services.php
 
 use App\Services\DatabaseInstaller;
 use App\Plugins\Di\Factory;
+use Exception;
+use PDOException;
 
 try {
     // Get the Logger from the DI container

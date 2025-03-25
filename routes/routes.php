@@ -1,25 +1,35 @@
 <?php
 
-/** @var Bramus\Router\Router $router */
-$router = App\Plugins\Di\Factory::getDi()->getShared('router');
+declare(strict_types=1);
+
+namespace App\Routes;
+
+use App\Controllers\FacilityController;
+use App\Controllers\LocationController;
+use App\Controllers\TagController;
+use App\Plugins\Di\Factory;
+use Bramus\Router\Router;
+
+/** @var Router $router */
+$router = Factory::getDi()->getShared('router');
 
 // Facility routes
-$router->get('/facilities', App\Controllers\FacilityController::class . '@getAllFacilities');
-$router->get('/facilities/(\d+)', App\Controllers\FacilityController::class . '@getFacilityById');
-$router->post('/facilities', App\Controllers\FacilityController::class . '@createFacility');
-$router->put('/facilities/(\d+)', App\Controllers\FacilityController::class . '@updateFacility');
-$router->delete('/facilities/(\d+)', App\Controllers\FacilityController::class . '@deleteFacility');
+$router->get('/facilities',          FacilityController::class . '@getAllFacilities');
+$router->get('/facilities/(\d+)',    FacilityController::class . '@getFacilityById');
+$router->post('/facilities',         FacilityController::class . '@createFacility');
+$router->put('/facilities/(\d+)',    FacilityController::class . '@updateFacility');
+$router->delete('/facilities/(\d+)', FacilityController::class . '@deleteFacility');
 
-// Location Routes
-$router->get('/locations', App\Controllers\LocationController::class . '@getAllLocations');
-$router->get('/locations/(\d+)', App\Controllers\LocationController::class . '@getLocationById');
-$router->post('/locations', App\Controllers\LocationController::class . '@createLocation');
-$router->put('/locations/(\d+)', App\Controllers\LocationController::class . '@updateLocation');
-$router->delete('/locations/(\d+)', App\Controllers\LocationController::class . '@deleteLocation');
+// Location routes
+$router->get('/locations',           LocationController::class . '@getAllLocations');
+$router->get('/locations/(\d+)',     LocationController::class . '@getLocationById');
+$router->post('/locations',          LocationController::class . '@createLocation');
+$router->put('/locations/(\d+)',     LocationController::class . '@updateLocation');
+$router->delete('/locations/(\d+)',  LocationController::class . '@deleteLocation');
 
-// Tag Routes
-$router->get('/tags', App\Controllers\TagController::class . '@getAllTags');
-$router->get('/tags/(\d+)', App\Controllers\TagController::class . '@getTagById');
-$router->post('/tags', App\Controllers\TagController::class . '@createTag');
-$router->put('/tags/(\d+)', App\Controllers\TagController::class . '@updateTag');
-$router->delete('/tags/(\d+)', App\Controllers\TagController::class . '@deleteTag');
+// Tag routes
+$router->get('/tags',                TagController::class . '@getAllTags');
+$router->get('/tags/(\d+)',          TagController::class . '@getTagById');
+$router->post('/tags',               TagController::class . '@createTag');
+$router->put('/tags/(\d+)',          TagController::class . '@updateTag');
+$router->delete('/tags/(\d+)',       TagController::class . '@deleteTag');

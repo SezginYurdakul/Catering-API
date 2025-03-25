@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace App\Services;
+
 use Dotenv\Dotenv;
 
 // Load environment variables

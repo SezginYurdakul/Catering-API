@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Tag;
@@ -41,6 +43,10 @@ class TagService implements ITagService
 
     public function createTag(Tag $tag): string
     {
+        if (!$this->isTagNameUnique($tag->name)) {
+            throw new \Exception("Tag name:'{$tag->name}' already exists.It should be unique.");
+        }
+
         $query = "INSERT INTO Tags (name) VALUES (:name)";
         $bind = [':name' => $tag->name];
         $result = $this->db->executeQuery($query, $bind);
@@ -79,5 +85,25 @@ class TagService implements ITagService
         }
 
         throw new \Exception("Failed to delete the tag with ID {$tag->id}.");
+    }
+
+    public function isTagUsedByFacilities(int $id): void
+    {
+        $query = "SELECT COUNT(*) FROM Facility_Tags WHERE tag_id = :id";
+        $stmt = $this->db->executeSelectQuery($query, [':id' => $id]);
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            throw new \Exception("Tag with ID $id is used by one or more facilities.");
+        }
+    }
+
+    private function isTagNameUnique(string $name): bool
+    {
+        $query = "SELECT COUNT(*) FROM Tags WHERE name = :name";
+        $stmt = $this->db->executeSelectQuery($query, [':name' => $name]);
+        $count = $stmt->fetchColumn();
+
+        return $count === 0;
     }
 }

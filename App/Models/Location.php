@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-class Location {
+class Location
+{
     public int $id;
     public ?string $city;
     public ?string $address;
