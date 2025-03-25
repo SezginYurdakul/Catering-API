@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Location;
 use App\Services\CustomDb;
 use PDO;
+use App\Helpers\InputSanitizer;
 
 class LocationService implements ILocationService
 {
@@ -55,6 +56,15 @@ class LocationService implements ILocationService
 
     public function createLocation(Location $location): string
     {
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'city' => $location->city,
+            'address' => $location->address,
+            'zip_code' => $location->zip_code,
+            'country_code' => $location->country_code,
+            'phone_number' => $location->phone_number
+        ]);
+
         $query = "INSERT INTO Locations (city, address, zip_code, country_code, phone_number) 
                   VALUES (:city, :address, :zip_code, :country_code, :phone_number)";
         $bind = [
@@ -75,8 +85,17 @@ class LocationService implements ILocationService
 
     public function updateLocation(Location $location): string
     {
-        // Map the Location object to an array of fields and bindings
-        $mappedData = $this->mapLocationToUpdateFields($location);
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'city' => $location->city,
+            'address' => $location->address,
+            'zip_code' => $location->zip_code,
+            'country_code' => $location->country_code,
+            'phone_number' => $location->phone_number
+        ]);
+
+        // Map the sanitized data to an array of fields and bindings
+        $mappedData = $this->mapLocationToUpdateFields((object) $sanitizedData);
 
         if (empty($mappedData['fields'])) {
             throw new \Exception("No valid fields provided for update.");

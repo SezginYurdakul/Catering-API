@@ -33,3 +33,12 @@ $router->get('/tags/(\d+)',          TagController::class . '@getTagById');
 $router->post('/tags',               TagController::class . '@createTag');
 $router->put('/tags/(\d+)',          TagController::class . '@updateTag');
 $router->delete('/tags/(\d+)',       TagController::class . '@deleteTag');
+
+// Search route
+// Allows searching facilities by query string.
+// Optional filter parameter can be used to specify the search type:
+// - filter=facility: Search by facility name
+// - filter=city: Search by city name
+// - filter=tag: Search by tag name
+// If no filter is specified, a general search is performed across all fields.
+$router->get('/facilities/search', FacilityController::class . '@searchFacilities');

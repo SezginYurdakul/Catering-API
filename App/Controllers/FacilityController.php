@@ -116,7 +116,7 @@ class FacilityController
     public function updateFacility($id)
     {
         try {
-            $id = (int) $id; 
+            $id = (int) $id;
 
             $data = json_decode(file_get_contents('php://input'), true);
 
@@ -133,7 +133,7 @@ class FacilityController
                 $data['name'] ?? $existingFacility->name,
                 $data['location_id'] ?? $existingFacility->location_id,
                 $existingFacility->creation_date,
-                $data['tags'] ?? $existingFacility->tags
+                $data['tags'] ?? []
             );
 
             $result = $this->facilityService->updateFacility($facility);
@@ -175,6 +175,35 @@ class FacilityController
             }
 
             $response = new NoContent(); // 204 No Content response
+            $response->send();
+        } catch (\Exception $e) {
+            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse->send();
+        }
+    }
+
+    /**
+     * Search for facilities by a query string.
+     * Sends a 200 OK response with the list of facilities that match the query.
+     * Sends a 400 Bad Request response if the query is missing.
+     * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @return void
+     */ public function searchFacilities(): void
+    {
+        try {
+            $query = $_GET['query'] ?? '';
+            $filter = $_GET['filter'] ?? '';
+
+            if (empty($query)) {
+                $errorResponse = new BadRequest("Search query is required."); // 400 Bad Request
+                $errorResponse->send();
+                return;
+            }
+
+            $facilities = $this->facilityService->searchFacilities($query, $filter);
+
+            $response = new Ok($facilities); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error

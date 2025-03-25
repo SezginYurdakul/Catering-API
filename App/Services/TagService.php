@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Tag;
 use App\Services\CustomDb;
 use PDO;
+use App\Helpers\InputSanitizer;
 
 class TagService implements ITagService
 {
@@ -43,6 +44,11 @@ class TagService implements ITagService
 
     public function createTag(Tag $tag): string
     {
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'name' => $tag->name
+        ]);
+
         if (!$this->isTagNameUnique($tag->name)) {
             throw new \Exception("Tag name:'{$tag->name}' already exists.It should be unique.");
         }
@@ -60,6 +66,11 @@ class TagService implements ITagService
 
     public function updateTag(Tag $tag): string
     {
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'name' => $tag->name
+        ]);
+
         $query = "UPDATE Tags SET name = :name WHERE id = :id";
         $bind = [
             ':name' => $tag->name,

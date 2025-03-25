@@ -48,9 +48,11 @@ interface IFacilityService
     public function deleteFacility(Facility $facility): string;
 
     /**
-     * Check if a location exists by its ID.
+     * Search for facilities based on a query string.
      *
-     * @param int $locationId
-     * @return void
+     * @param string $query
+     * @param string $filter
+     * @return array
      */
+    public function searchFacilities(string $query, string $filter): array;
 }
