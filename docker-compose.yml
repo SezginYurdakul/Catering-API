@@ -13,7 +13,7 @@ services:
     depends_on:
       - db # Ensure the database service starts before the app
     environment:
-      DB_HOST: ${DB_HOST}
+      DB_HOST: ${DB_HOST} # Ensure this parameter is "db" in your enviroment
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
