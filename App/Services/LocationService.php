@@ -19,9 +19,12 @@ class LocationService implements ILocationService
 
     /**
      * Get all locations
+     * 
      * @param int $page
      * @param int $perPage
+     * @throws \Exception
      * @return array{locations: Location[], pagination: array}
+
      */
     public function getAllLocations(int $page = 1, int $perPage = 10): array
     {
@@ -86,6 +89,7 @@ class LocationService implements ILocationService
 
     /**
      * Create a new location
+     * 
      * @param Location $location
      * @throws \Exception
      * @return string
@@ -121,6 +125,7 @@ class LocationService implements ILocationService
 
     /**
      * Update an existing location
+     * 
      * @param Location $location
      * @throws \Exception
      * @return string
@@ -167,6 +172,7 @@ class LocationService implements ILocationService
 
     /**
      * Delete an existing location
+     * 
      * @param Location $location
      * @throws \Exception
      * @return string
@@ -186,6 +192,7 @@ class LocationService implements ILocationService
 
     /**
      * Map the location object to an array of fields and bindings for update
+     * 
      * @param Location $location
      * @return array
      */
@@ -209,6 +216,7 @@ class LocationService implements ILocationService
 
     /**
      * Check if a location is used by any facilities
+     * 
      * @param int $locationId
      * @return bool
      */

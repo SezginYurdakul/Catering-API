@@ -20,7 +20,7 @@ class LocationController
     private ILocationService $locationService;
 
     /**
-     * Constructor to initialize the LocationService from the DI container.
+     * Constructor to initialize the LocationService from the DI container and the AuthMiddleware.
      */
     public function __construct()
     {
@@ -33,8 +33,10 @@ class LocationController
      * Get all locations.
      * Sends a 200 OK response with the list of locations.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @return void
      */
-    public function getAllLocations()
+    public function getAllLocations(): void
     {
         try {
             // Take the current user from the session
@@ -42,13 +44,13 @@ class LocationController
 
             // Get pagination parameters from the request
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
-    
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 25;
+
             // Call the service method with pagination
             $locations = $this->locationService->getAllLocations($page, $perPage);
-    
+
             // Send the response
-            $response = new Ok(['user'=>$currentUser,'locations'=>$locations]); // 200 OK response
+            $response = new Ok(['user' => $currentUser, 'locations' => $locations]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -61,8 +63,11 @@ class LocationController
      * Sends a 200 OK response if the location is found.
      * Sends a 404 Not Found response if the location does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @param int $id
+     * @return void
      */
-    public function getLocationById($id)
+    public function getLocationById($id): void
     {
         try {
             $currentUser = $_SESSION['user'] ?? 'Guest';
@@ -75,7 +80,7 @@ class LocationController
                 return;
             }
 
-             $response = new Ok([
+            $response = new Ok([
                 'user' => $currentUser,
                 'facility' => $location
             ]); // 200 OK response
@@ -91,8 +96,10 @@ class LocationController
      * Sends a 201 Created response with the created location.
      * Sends a 400 Bad Request response if required fields are missing.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @return void
      */
-    public function createLocation()
+    public function createLocation(): void
     {
         try {
             $currentUser = $_SESSION['user'] ?? 'Guest';
@@ -118,7 +125,7 @@ class LocationController
             );
 
             $result = $this->locationService->createLocation($location);
-            $response = new Created(['user' => $currentUser,'result'=>$result]); // 201 Created response
+            $response = new Created(['user' => $currentUser, 'result' => $result]); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -132,8 +139,11 @@ class LocationController
      * Sends a 400 Bad Request response if required fields are missing.
      * Sends a 404 Not Found response if the location does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @param int $id
+     * @return void
      */
-    public function updateLocation($id)
+    public function updateLocation($id): void
     {
         try {
             $currentUser = $_SESSION['user'] ?? 'Guest';
@@ -175,7 +185,7 @@ class LocationController
                 return;
             }
 
-            $response = new Ok(['user' => $currentUser,'result'=>$result]); // 200 OK response
+            $response = new Ok(['user' => $currentUser, 'result' => $result]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -188,12 +198,13 @@ class LocationController
      * Sends a 204 No Content response if the location is successfully deleted.
      * Sends a 404 Not Found response if the location does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @param int $id
+     * @return void
      */
-    public function deleteLocation($id)
+    public function deleteLocation($id): void
     {
         try {
-            $id = (int) $id;
-
             // Check if the location is used by any facilities
             if ($this->locationService->isLocationUsedByFacilities($id)) {
                 $errorResponse = new BadRequest(

@@ -15,6 +15,14 @@ class DatabaseInstaller
         $this->db = $db;
     }
 
+    /**
+     * This method runs the SQL scripts to create and seed the database tables.
+     * 
+     * @param string $createTablesFile
+     * @param string $seedTablesFile
+     * @throws \Exception
+     * @return void
+     */
     public function run(string $createTablesFile, string $seedTablesFile): void
     {
         // Execute Create Table SQL script

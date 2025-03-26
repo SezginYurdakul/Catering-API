@@ -13,6 +13,13 @@ class Logger
         $this->logFile = $logFile;
     }
 
+    /**
+     * Log a message to the log file
+     * 
+     * @param string $level
+     * @param string $message
+     * @return void
+     */
     public function log(string $level, string $message): void
     {
         $date = date('Y-m-d H:i:s');
@@ -22,11 +29,23 @@ class Logger
         file_put_contents($this->logFile, $logMessage, FILE_APPEND);
     }
 
+    /**
+     * Log an INFO message to the log file
+     * 
+     * @param string $message
+     * @return void
+     */
     public function info(string $message): void
     {
         $this->log('INFO', $message);
     }
 
+    /**
+     * Log a WARNING message to the log file
+     * 
+     * @param string $message
+     * @return void
+     */
     public function error(string $message): void
     {
         $this->log('ERROR', $message);

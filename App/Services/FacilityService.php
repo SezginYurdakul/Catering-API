@@ -21,8 +21,13 @@ class FacilityService implements IFacilityService
         $this->db = $db;
     }
 
-    // Get all facilities
-    public function getAllFacilities(int $page = 1, int $perPage = 10): array
+    /** Get all facilities
+     * 
+     * @param int $page The page number.
+     * @param int $perPage The number of items per page.
+     * @return array An array containing the facilities and pagination metadata.
+     */
+    public function getAllFacilities(int $page, int $perPage): array
     {
         // Calculate offset and limit
         $offset = ($page - 1) * $perPage;
@@ -76,7 +81,12 @@ class FacilityService implements IFacilityService
         ];
     }
 
-    // Get a single facility by ID
+    /** Get a single facility by ID
+     * 
+     * @param int $id The facility ID.
+     * @return Facility The facility object.
+     * @throws \Exception If the facility does not exist.
+     */
     public function getFacilityById(int $id): Facility
     {
         $query = "
@@ -116,7 +126,12 @@ class FacilityService implements IFacilityService
         );
     }
 
-    // Create a new facility
+    /** Create a new facility
+     * 
+     * @param Facility $facility The facility object.
+     * @return string A success message.
+     * @throws \Exception If the location does not exist or if the facility creation fails.
+     */
     public function createFacility(Facility $facility): string
     {
         // Start a transaction
@@ -166,7 +181,12 @@ class FacilityService implements IFacilityService
         }
     }
 
-    // Update an existing facility
+    /** Update an existing facility
+     * 
+     * @param Facility $facility The facility object.
+     * @return string A success message.
+     * @throws \Exception If the facility does not exist, if the location does not exist, or if the facility update fails.
+     */
     public function updateFacility(Facility $facility): string
     {
         // Start a transaction
@@ -231,7 +251,12 @@ class FacilityService implements IFacilityService
         }
     }
 
-    // Delete a facility by ID
+    /** Delete a facility by ID
+     * 
+     * @param Facility $facility The facility object.
+     * @return string A success message.
+     * @throws \Exception If the facility does not exist or if the facility deletion fails.
+     */
     public function deleteFacility(Facility $facility): string
     {
         $this->checkIfFacilityExists($facility->id);
@@ -248,7 +273,12 @@ class FacilityService implements IFacilityService
         throw new \Exception("Failed to delete the facility with ID {$facility->id}.");
     }
 
-    // Search facilities by parameters
+    /** Search facilities by parameters
+     * 
+     * @param string $query The search query.
+     * @param string $filter The filter to apply (facility, city, tag).
+     * @return array An array of facilities matching the search query.
+     */
     public function searchFacilities(string $query, string $filter): array
     {
         // Sanitize query
@@ -287,7 +317,12 @@ class FacilityService implements IFacilityService
         return $this->convertTagsIntoArray($results);
     }
 
-    // Helper method to check if a location exists
+    /** Helper method to check if a location exists
+     * 
+     * @param int $locationId The location ID.
+     * @return void
+     * @throws \Exception If the location does not exist.
+     */
     private function checkIfLocationExists(int $locationId): void
     {
         $query = "SELECT COUNT(*) FROM Locations WHERE id = :location_id";
@@ -299,7 +334,12 @@ class FacilityService implements IFacilityService
         }
     }
 
-    // Helper method to check if a facility exists
+    /** Helper method to check if a facility exists
+     * 
+     * @param int $facilityId The facility ID.
+     * @return void
+     * @throws \Exception If the facility does not exist.
+     */
     private function checkIfFacilityExists(int $facilityId): void
     {
         $query = "SELECT COUNT(*) FROM Facilities WHERE id = :id";
@@ -313,7 +353,6 @@ class FacilityService implements IFacilityService
 
     /**
      * Synchronize the tags associated with a facility.
-     * 
      * This method first validates all provided tags. If any tag is invalid, no changes are made.
      * If all tags are valid, it removes all existing tags associated with the given facility
      * and then links the provided tags to the facility.
@@ -346,7 +385,13 @@ class FacilityService implements IFacilityService
         }
     }
 
-    // Helper method to link a tag to a facility
+    /** Helper method to link a tag to a facility
+     * 
+     * @param int $facilityId The facility ID.
+     * @param int $tagId The tag ID.
+     * @return void
+     * @throws \Exception If the tag does not exist.
+     */
     private function linkTagToFacility(int $facilityId, int $tagId): void
     {
         // Check if the tag exists
@@ -366,7 +411,11 @@ class FacilityService implements IFacilityService
         ]);
     }
 
-    // Helper method to build the WHERE clause based on the filter
+    /** Helper method to build the WHERE clause based on the filter
+     * 
+     * @param string $filter The filter to apply (facility, city, tag).
+     * @return string The WHERE clause.
+     */
     private function buildWhereClause(string $filter): string
     {
         switch ($filter) {
@@ -381,7 +430,11 @@ class FacilityService implements IFacilityService
         }
     }
 
-    // Helper method to convert tags into an array
+    /** Helper method to convert tags into an array
+     * 
+     * @param array $results The results array.
+     * @return array The results array with tags converted into an array.
+     */
     private function convertTagsIntoArray(array $results): array
     {
         foreach ($results as &$result) {
@@ -393,4 +446,15 @@ class FacilityService implements IFacilityService
         }
         return $results;
     }
+
+    /** Helper method to get the total number of facilities
+     * 
+     * @return int The total number of facilities.
+     */
+    public function getTotalFacilitiesCount(): int
+{
+    $query = "SELECT COUNT(*) AS total FROM Facilities";
+    $stmt = $this->db->executeSelectQuery($query);
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+}
 }

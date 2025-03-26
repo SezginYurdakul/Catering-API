@@ -11,6 +11,7 @@ interface ILocationService
     /**
      * Get all locations.
      * Retrieves a list of all locations.
+     * 
      *@param int $page 
      *@param int $perPage
      * @return array An array of Location objects.

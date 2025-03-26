@@ -56,4 +56,12 @@ interface IFacilityService
      * @return array
      */
     public function searchFacilities(string $query, string $filter): array;
+
+
+
+    /** Calculate the total number of pages based on the total number of results.
+     * 
+     * @return int
+     */
+    public function getTotalFacilitiesCount(): int;
 }

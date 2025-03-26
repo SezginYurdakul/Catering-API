@@ -11,6 +11,7 @@ interface ITagService
     /**
      * Get all tags.
      * Retrieves a list of all tags.
+     * 
      *@param int $page
      *@param int $perPage
      * @return array An array of Tag objects.

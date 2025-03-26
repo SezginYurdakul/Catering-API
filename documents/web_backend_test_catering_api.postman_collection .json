@@ -70,6 +70,41 @@
 					"response": []
 				},
 				{
+					"name": "facilities?page=1&per_page=3",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/facilities?page=1&per_page=3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"facilities"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "facilities/{id}",
 					"request": {
 						"method": "GET",
@@ -102,7 +137,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\": 1,\n    \"name\": \"Amsterdam Grand Bazaar\",\n    \"location_id\": 2,\n    \"tags\": [2,5]\n}",
+							"raw": "{\n            \"name\": \"Test Facility XXXX\",\n        \"location_id\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -110,7 +145,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost/web_backend_test_catering_api/facilities/1",
+							"raw": "http://localhost/web_backend_test_catering_api/facilities/29",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -118,7 +153,7 @@
 							"path": [
 								"web_backend_test_catering_api",
 								"facilities",
-								"1"
+								"29"
 							]
 						}
 					},
@@ -130,7 +165,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "http://localhost/web_backend_test_catering_api/facilities/30",
+							"raw": "http://localhost/web_backend_test_catering_api/facilities/1",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -138,7 +173,7 @@
 							"path": [
 								"web_backend_test_catering_api",
 								"facilities",
-								"30"
+								"1"
 							]
 						}
 					},
@@ -311,6 +346,35 @@
 					"response": []
 				},
 				{
+					"name": "tags?page=1&per_page=3",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/tags?page=1&per_page=3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"tags"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "tags",
 					"request": {
 						"method": "POST",
@@ -375,8 +439,33 @@
 				{
 					"name": "tags/{id}",
 					"request": {
-						"method": "PUT",
-						"header": []
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/tags/20",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"tags",
+								"20"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
 					},
 					"response": []
 				}
@@ -389,7 +478,37 @@
 					"name": "locations",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/locations",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"locations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "locations?page=1&per_page=3",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/locations",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"locations"
+							]
+						}
 					},
 					"response": []
 				},
@@ -397,7 +516,19 @@
 					"name": "locations/{id}",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/locations/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"locations",
+								"1"
+							]
+						}
 					},
 					"response": []
 				},
@@ -405,19 +536,132 @@
 					"name": "locations/{id}",
 					"request": {
 						"method": "PUT",
-						"header": []
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"zip_code\": \"1012ABXX\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/locations/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"locations",
+								"1"
+							]
+						}
 					},
 					"response": []
 				},
 				{
 					"name": "locations",
 					"request": {
-						"method": "PUT",
-						"header": []
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"city\": \"Test\",\n    \"address\": \"Test 1\",\n    \"zip_code\": \"1012AB\",\n    \"country_code\": \"NL\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/locations",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"locations"
+							]
+						}
 					},
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "auth/login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user@catering.com\",\n    \"password\": \"securepassword123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost/web_backend_test_catering_api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"web_backend_test_catering_api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0IiwiaWF0IjoxNzQyOTQzNTgyLCJleHAiOjE3NDMzMDM1ODIsInVzZXIiOiJ1c2VyQGNhdGVyaW5nLmNvbSJ9.twsPMOzppqjLsnmSfi-aTplnaBtzUhZ6rQkolP_BSCk",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }

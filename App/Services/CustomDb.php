@@ -7,10 +7,14 @@ namespace App\Services;
 use App\Plugins\Db\Db;
 use PDOStatement;
 
+/** CustomDb class extends the Db class from the Db plugin
+ * This class provides custom methods for executing SELECT queries and getting the last inserted ID as an integer
+ */
 class CustomDb extends Db
 {
     /**
      * Execute a SELECT query
+     * 
      * @param string $query
      * @param array $bind
      * @return PDOStatement

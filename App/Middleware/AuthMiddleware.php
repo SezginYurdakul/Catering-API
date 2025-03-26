@@ -18,6 +18,13 @@ class AuthMiddleware
         $this->secretKey = $config['jwt']['secret_key'];
     }
 
+    /**
+     * Handle method to check the Authorization header and validate the JWT token.
+     * If the token is valid, the user information is stored in the session.
+     * If the token is invalid or expired, a 401 Unauthorized response is sent.
+     * 
+     * @return void
+     */
     public function handle(): void
     {
         $headers = getallheaders();
