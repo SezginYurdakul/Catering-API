@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Location;
 use App\Services\CustomDb;
 use PDO;
+use App\Helpers\InputSanitizer;
+use App\Helpers\PaginationHelper;
 
 class LocationService implements ILocationService
 {
@@ -15,13 +17,28 @@ class LocationService implements ILocationService
         $this->db = $db;
     }
 
-    public function getAllLocations(): array
+    /**
+     * Get all locations
+     * 
+     * @param int $page
+     * @param int $perPage
+     * @throws \Exception
+     * @return array{locations: Location[], pagination: array}
+
+     */
+    public function getAllLocations(int $page = 1, int $perPage = 10): array
     {
-        $query = "SELECT * FROM Locations";
+        $offset = ($page - 1) * $perPage;
+        $query = "
+        SELECT * 
+        FROM Locations
+        LIMIT $perPage OFFSET $offset
+    ";
+    
         $stmt = $this->db->executeSelectQuery($query);
         $locationsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(function ($locationData) {
+        $locations = array_map(function ($locationData) {
             return new Location(
                 $locationData['id'],
                 $locationData['city'],
@@ -31,8 +48,23 @@ class LocationService implements ILocationService
                 $locationData['phone_number']
             );
         }, $locationsData);
+
+        // Get the total number of locations
+        $totalItems = (int) $this->getTotalLocationsCount();
+        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+
+        return [
+            'locations' => $locations,
+            'pagination' => $pagination
+        ];
     }
 
+    /**
+     * Get one location by its ID
+     * @param int $id
+     * @throws \Exception
+     * @return Location
+     */
     public function getLocationById(int $id): Location
     {
         $query = "SELECT * FROM Locations WHERE id = :id";
@@ -53,8 +85,24 @@ class LocationService implements ILocationService
         );
     }
 
+    /**
+     * Create a new location
+     * 
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function createLocation(Location $location): string
     {
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'city' => $location->city,
+            'address' => $location->address,
+            'zip_code' => $location->zip_code,
+            'country_code' => $location->country_code,
+            'phone_number' => $location->phone_number
+        ]);
+
         $query = "INSERT INTO Locations (city, address, zip_code, country_code, phone_number) 
                   VALUES (:city, :address, :zip_code, :country_code, :phone_number)";
         $bind = [
@@ -73,10 +121,35 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to create the location.");
     }
 
+    /**
+     * Update an existing location
+     * 
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function updateLocation(Location $location): string
     {
-        // Map the Location object to an array of fields and bindings
-        $mappedData = $this->mapLocationToUpdateFields($location);
+        // Sanitize client data
+        $sanitizedData = InputSanitizer::sanitize([
+            'city' => $location->city,
+            'address' => $location->address,
+            'zip_code' => $location->zip_code,
+            'country_code' => $location->country_code,
+            'phone_number' => $location->phone_number
+        ]);
+
+        // Map the sanitized data to an array of fields and bindings
+        $locationObject = new Location(
+            $location->id,
+            $sanitizedData['city'] ?? null,
+            $sanitizedData['address'] ?? null,
+            $sanitizedData['zip_code'] ?? null,
+            $sanitizedData['country_code'] ?? null,
+            $sanitizedData['phone_number'] ?? null
+        );
+
+        $mappedData = $this->mapLocationToUpdateFields($locationObject);
 
         if (empty($mappedData['fields'])) {
             throw new \Exception("No valid fields provided for update.");
@@ -95,6 +168,13 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to update the location with ID {$location->id}.");
     }
 
+    /**
+     * Delete an existing location
+     * 
+     * @param Location $location
+     * @throws \Exception
+     * @return string
+     */
     public function deleteLocation(Location $location): string
     {
         $query = "DELETE FROM Locations WHERE id = :id";
@@ -108,6 +188,12 @@ class LocationService implements ILocationService
         throw new \Exception("Failed to delete the location with ID {$location->id}.");
     }
 
+    /**
+     * Map the location object to an array of fields and bindings for update
+     * 
+     * @param Location $location
+     * @return array
+     */
     private function mapLocationToUpdateFields(Location $location): array
     {
         $fields = [];
@@ -126,6 +212,12 @@ class LocationService implements ILocationService
     }
 
 
+    /**
+     * Check if a location is used by any facilities
+     * 
+     * @param int $locationId
+     * @return bool
+     */
     public function isLocationUsedByFacilities(int $locationId): bool
     {
         $query = "SELECT COUNT(*) FROM Facilities WHERE location_id = :location_id";
@@ -133,5 +225,16 @@ class LocationService implements ILocationService
         $count = $stmt->fetchColumn();
 
         return $count > 0;
+    }
+
+    /**Helper method to get the total number of locations
+     * 
+     * @return int
+     */
+    public function getTotalLocationsCount(): int
+    {
+        $query = "SELECT COUNT(*) AS total FROM Locations";
+        $stmt = $this->db->executeSelectQuery($query);
+        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
 }

@@ -10,10 +10,11 @@ interface IFacilityService
 {
     /**
      * Get all facilities.
-     *
+     *@param int $page
+     *@param int $perPage
      * @return array
      */
-    public function getAllFacilities(): array;
+    public function getAllFacilities(int $page, int $perPage): array;
 
     /**
      * Get a facility by its ID.
@@ -48,9 +49,19 @@ interface IFacilityService
     public function deleteFacility(Facility $facility): string;
 
     /**
-     * Check if a location exists by its ID.
+     * Search for facilities based on a query string.
      *
-     * @param int $locationId
-     * @return void
+     * @param string $query
+     * @param string $filter
+     * @return array
      */
+    public function searchFacilities(string $query, string $filter): array;
+
+
+
+    /** Calculate the total number of pages based on the total number of results.
+     * 
+     * @return int
+     */
+    public function getTotalFacilitiesCount(): int;
 }

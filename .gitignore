@@ -1,8 +1,6 @@
 # Ignore environment file
 .env
 
-# Ignore documents folder
-documents/
 
 # Ignore vendor folder 
 vendor/

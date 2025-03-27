@@ -11,10 +11,12 @@ interface ILocationService
     /**
      * Get all locations.
      * Retrieves a list of all locations.
-     *
+     * 
+     *@param int $page 
+     *@param int $perPage
      * @return array An array of Location objects.
      */
-    public function getAllLocations(): array;
+    public function getAllLocations(int $page, int $perPage): array;
 
     /**
      * Get a location by its ID.
@@ -61,4 +63,11 @@ interface ILocationService
      * @return bool True if the location is used by any facilities, false otherwise.
      */
     public function isLocationUsedByFacilities(int $locationId): bool;
+
+    /**
+     * Get the total number of locations.
+     *
+     * @return int The total number of locations.
+     */
+    public function getTotalLocationsCount(): int;
 }

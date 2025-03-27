@@ -13,6 +13,7 @@ use App\Plugins\Http\Response\NoContent;
 use App\Plugins\Http\Response\NotFound;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
+use App\Middleware\AuthMiddleware;
 
 class TagController
 {
@@ -20,10 +21,13 @@ class TagController
 
     /**
      * Constructor to initialize the TagService from the DI container.
+     * Authenticates the user with the AuthMiddleware.
      */
     public function __construct()
     {
         $this->tagService = Factory::getDi()->getShared('tagService');
+        $authMiddleware = new AuthMiddleware();
+        $authMiddleware->handle();
     }
 
     /**
@@ -36,8 +40,21 @@ class TagController
     public function getAllTags(): void
     {
         try {
-            $tags = $this->tagService->getAllTags();
-            $response = new Ok($tags); // 200 OK response
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
+            // Get pagination parameters from the request
+            // If per_page is not provided, show all tags
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
+                $this->tagService->getTotalTagsCount();
+
+            $tags = $this->tagService->getAllTags($page, $perPage);
+
+            $response = new Ok([
+                'user' => $currentUser,
+                'tags'=>$tags
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -57,6 +74,8 @@ class TagController
     public function getTagById(int $id): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $tag = $this->tagService->getTagById($id);
 
             if (!$tag) {
@@ -65,7 +84,10 @@ class TagController
                 return;
             }
 
-            $response = new Ok($tag); // 200 OK response
+            $response = new Ok([
+                'user' => $currentUser,
+                'tag'=>$tag
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -84,6 +106,8 @@ class TagController
     public function createTag(): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['name'])) {
@@ -94,7 +118,7 @@ class TagController
 
             $tag = new Tag(0, $data['name']);
             $result = $this->tagService->createTag($tag);
-            $response = new Created($result); // 201 Created response
+            $response = new Created(['user' => $currentUser,'result'=>$result]); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -115,6 +139,8 @@ class TagController
     public function updateTag(int $id): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['name'])) {
@@ -132,7 +158,7 @@ class TagController
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
+            $response = new Ok(['user' => $currentUser,'result'=>$result]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error

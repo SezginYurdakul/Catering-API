@@ -13,29 +13,49 @@ use App\Plugins\Http\Response\NotFound;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
 use App\Services\IFacilityService;
+use App\Middleware\AuthMiddleware;
 
 class FacilityController
 {
     private IFacilityService $facilityService;
 
     /**
-     * Constructor to initialize the FacilityService from the DI container.
+     * Constructor to initialize the FacilityService from the DI container and the AuthMiddleware.
      */
     public function __construct()
     {
         $this->facilityService = Factory::getDi()->getShared('facilityService');
+        $authMiddleware = new AuthMiddleware();
+        $authMiddleware->handle();
     }
 
     /**
      * Get all facilities.
      * Sends a 200 OK response with the list of facilities.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @return void
      */
-    public function getAllFacilities()
+    public function getAllFacilities(): void
     {
         try {
-            $facilities = $this->facilityService->getAllFacilities();
-            $response = new Ok($facilities); // 200 OK response
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
+            // Get pagination parameters from the request
+            // If per_page is not provided, show all facilities
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
+                $this->facilityService->getTotalFacilitiesCount();
+
+            // Call the service method with pagination
+            $facilities = $this->facilityService->getAllFacilities($page, $perPage);
+
+            // Send the response
+            $response = new Ok([
+                'user' => $currentUser,
+                'facilities' => $facilities
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -43,15 +63,21 @@ class FacilityController
         }
     }
 
+
     /**
      * Get a specific facility by its ID.
      * Sends a 200 OK response if the facility is found.
      * Sends a 404 Not Found response if the facility does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @param int $id
+     * @return void
      */
-    public function getFacilityById($id)
+    public function getFacilityById(int $id): void
     {
         try {
+            // Take the current user from the session
+            $currentUser = $_SESSION['user'] ?? 'Guest';
 
             $facility = $this->facilityService->getFacilityById((int) $id);
 
@@ -61,7 +87,10 @@ class FacilityController
                 return;
             }
 
-            $response = new Ok($facility); // 200 OK response
+            $response = new Ok([
+                'user' => $currentUser,
+                'facility' => $facility
+            ]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -74,12 +103,14 @@ class FacilityController
      * Sends a 201 Created response with the created facility.
      * Sends a 400 Bad Request response if required fields are missing.
      * Sends a 500 Internal Server Error response in case of an exception.
-     *
+     * 
      * @return void
      */
     public function createFacility(): void
     {
         try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['name']) || empty($data['location_id'])) {
@@ -98,7 +129,7 @@ class FacilityController
 
             $result = $this->facilityService->createFacility($facility);
 
-            $response = new Created($result); // 201 Created response
+            $response = new Created(['user' => $currentUser, 'result' => $result]); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -112,11 +143,15 @@ class FacilityController
      * Sends a 400 Bad Request response if required fields are missing.
      * Sends a 404 Not Found response if the facility does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @param int $id
+     * @return void
      */
-    public function updateFacility($id)
+    public function updateFacility(int $id): void
     {
         try {
-            $id = (int) $id; 
+
+            $currentUser = $_SESSION['user'] ?? 'Guest';
 
             $data = json_decode(file_get_contents('php://input'), true);
 
@@ -133,7 +168,7 @@ class FacilityController
                 $data['name'] ?? $existingFacility->name,
                 $data['location_id'] ?? $existingFacility->location_id,
                 $existingFacility->creation_date,
-                $data['tags'] ?? $existingFacility->tags
+                $data['tags'] ?? []
             );
 
             $result = $this->facilityService->updateFacility($facility);
@@ -144,7 +179,7 @@ class FacilityController
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
+            $response = new Ok(['user' => $currentUser, 'result' => $result]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
@@ -157,13 +192,14 @@ class FacilityController
      * Sends a 204 No Content response if the facility is successfully deleted.
      * Sends a 404 Not Found response if the facility does not exist.
      * Sends a 500 Internal Server Error response in case of an exception.
-     *
+     * 
      * @param int $id
      * @return void
      */
-    public function deleteFacility($id): void
+    public function deleteFacility(int $id): void
     {
         try {
+
             $existingFacility = $this->facilityService->getFacilityById($id);
 
             $result = $this->facilityService->deleteFacility($existingFacility);
@@ -175,6 +211,37 @@ class FacilityController
             }
 
             $response = new NoContent(); // 204 No Content response
+            $response->send();
+        } catch (\Exception $e) {
+            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse->send();
+        }
+    }
+
+    /**
+     * Search for facilities by a query string.
+     * Sends a 200 OK response with the list of facilities that match the query.
+     * Sends a 400 Bad Request response if the query is missing.
+     * Sends a 500 Internal Server Error response in case of an exception.
+     * 
+     * @return void
+     */ public function searchFacilities(): void
+    {
+        try {
+            $currentUser = $_SESSION['user'] ?? 'Guest';
+
+            $query = $_GET['query'] ?? '';
+            $filter = $_GET['filter'] ?? '';
+
+            if (empty($query)) {
+                $errorResponse = new BadRequest("Search query is required."); // 400 Bad Request
+                $errorResponse->send();
+                return;
+            }
+
+            $facilities = $this->facilityService->searchFacilities($query, $filter);
+
+            $response = new Ok(['user' => $currentUser, 'faclities' => $facilities]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error

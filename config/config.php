@@ -17,4 +17,11 @@ return [
         'username' => $_ENV['DB_USERNAME'],
         'password' => $_ENV['DB_PASSWORD'],
     ],
+    'jwt' => [
+        'secret_key' => $_ENV['JWT_SECRET_KEY'],
+    ],
+    'auth' => [
+        'username' => $_ENV['LOGIN_USERNAME'],
+        'password' => $_ENV['LOGIN_PASSWORD'],
+    ],
 ];
