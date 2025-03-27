@@ -43,8 +43,11 @@ class TagController
             // Take the current user from the session
             $currentUser = $_SESSION['user'] ?? 'Guest';
 
+            // Get pagination parameters from the request
+            // If per_page is not provided, show all tags
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
+                $this->tagService->getTotalTagsCount();
 
             $tags = $this->tagService->getAllTags($page, $perPage);
 

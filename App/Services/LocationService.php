@@ -34,13 +34,9 @@ class LocationService implements ILocationService
         FROM Locations
         LIMIT $perPage OFFSET $offset
     ";
-
+    
         $stmt = $this->db->executeSelectQuery($query);
         $locationsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $countQuery = "SELECT COUNT(*) AS total FROM Locations";
-        $countStmt = $this->db->executeSelectQuery($countQuery);
-        $totalItems = (int) $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         $locations = array_map(function ($locationData) {
             return new Location(
@@ -53,6 +49,8 @@ class LocationService implements ILocationService
             );
         }, $locationsData);
 
+        // Get the total number of locations
+        $totalItems = (int) $this->getTotalLocationsCount();
         $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
 
         return [
@@ -227,5 +225,16 @@ class LocationService implements ILocationService
         $count = $stmt->fetchColumn();
 
         return $count > 0;
+    }
+
+    /**Helper method to get the total number of locations
+     * 
+     * @return int
+     */
+    public function getTotalLocationsCount(): int
+    {
+        $query = "SELECT COUNT(*) AS total FROM Locations";
+        $stmt = $this->db->executeSelectQuery($query);
+        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
 }

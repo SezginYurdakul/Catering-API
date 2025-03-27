@@ -191,4 +191,14 @@ class TagService implements ITagService
 
         return $count === 0;
     }
+
+    /**Helper method to get the total number of tags
+     * @return int
+     */
+    public function getTotalTagsCount(): int
+    {
+        $query = "SELECT COUNT(*) AS total FROM Tags";
+        $stmt = $this->db->executeSelectQuery($query);
+        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    }
 }

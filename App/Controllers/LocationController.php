@@ -43,8 +43,10 @@ class LocationController
             $currentUser = $_SESSION['user'] ?? 'Guest';
 
             // Get pagination parameters from the request
+            // If per_page is not provided, show all locations
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 25;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
+                $this->locationService->getTotalLocationsCount();
 
             // Call the service method with pagination
             $locations = $this->locationService->getAllLocations($page, $perPage);

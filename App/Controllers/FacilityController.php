@@ -43,13 +43,10 @@ class FacilityController
             $currentUser = $_SESSION['user'] ?? 'Guest';
 
             // Get pagination parameters from the request
+            // If per_page is not provided, show all facilities
             $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : null;
-
-            if ($perPage === null) {
-                $totalItems = $this->facilityService->getTotalFacilitiesCount();
-                $perPage = $totalItems;
-            }
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
+                $this->facilityService->getTotalFacilitiesCount();
 
             // Call the service method with pagination
             $facilities = $this->facilityService->getAllFacilities($page, $perPage);
