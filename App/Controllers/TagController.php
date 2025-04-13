@@ -14,6 +14,7 @@ use App\Plugins\Http\Response\NotFound;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
 use App\Middleware\AuthMiddleware;
+use App\Helpers\InputSanitizer;
 
 class TagController
 {
@@ -40,24 +41,37 @@ class TagController
     public function getAllTags(): void
     {
         try {
-            // Take the current user from the session
-            $currentUser = $_SESSION['user'] ?? 'Guest';
+            // Get and sanitize pagination parameters
+            $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
+            $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
 
-            // Get pagination parameters from the request
-            // If per_page is not provided, show all tags
-            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] :
-                $this->tagService->getTotalTagsCount();
-
+            // Validate pagination parameters
+            if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
+                $errorResponse = new BadRequest([
+                    "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
+                ]);
+                $errorResponse->send();
+                return;
+            }
+            // Fetch all tags with pagination
             $tags = $this->tagService->getAllTags($page, $perPage);
 
-            $response = new Ok([
-                'user' => $currentUser,
-                'tags'=>$tags
-            ]); // 200 OK response
+            // Check if the requested page exceeds the total number of pages
+            $totalItems = $tags['pagination']['total_items'];
+            $totalPages = (int) ceil($totalItems / $perPage);
+            if ($totalPages>0 && $page > $totalPages) {
+                $errorResponse = new BadRequest([
+                    "error" => "The requested page ($page) exceeds the total number of pages ($totalPages)."
+                ]);
+                $errorResponse->send();
+                return;
+            }
+
+
+            $response = new Ok($tags); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
@@ -74,23 +88,25 @@ class TagController
     public function getTagById(int $id): void
     {
         try {
-            $currentUser = $_SESSION['user'] ?? 'Guest';
-
+            // Sanitize the ID
+            $id = InputSanitizer::sanitizeId($id);
+            if ($id === null) {
+                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
+                $errorResponse->send();
+                return;
+            }
             $tag = $this->tagService->getTagById($id);
 
             if (!$tag) {
-                $errorResponse = new NotFound("Tag with ID $id not found."); // 404 Not Found
+                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 $errorResponse->send();
                 return;
             }
 
-            $response = new Ok([
-                'user' => $currentUser,
-                'tag'=>$tag
-            ]); // 200 OK response
+            $response = new Ok(['tag' => $tag]); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
@@ -106,22 +122,32 @@ class TagController
     public function createTag(): void
     {
         try {
-            $currentUser = $_SESSION['user'] ?? 'Guest';
 
-            $data = json_decode(file_get_contents('php://input'), true);
+            $tagData = json_decode(file_get_contents('php://input'), true);
 
-            if (empty($data['name'])) {
-                $errorResponse = new BadRequest("Tag name is required."); // 400 Bad Request
+            // Sanitize client data
+            $sanitizedData = InputSanitizer::sanitize([
+                'name' => $tagData['name']
+            ]);
+
+            // Validate tag name
+            if (empty(trim($sanitizedData['name']))) {
+                throw new \Exception("Tag name cannot be empty or whitespace.");
+            }
+
+            if (empty($sanitizedData['name'])) {
+                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to create the tag"]); // 400 Bad Request
                 $errorResponse->send();
                 return;
             }
 
-            $tag = new Tag(0, $data['name']);
+            $tag = new Tag(0, $sanitizedData['name']);
             $result = $this->tagService->createTag($tag);
-            $response = new Created(['user' => $currentUser,'result'=>$result]); // 201 Created response
+
+            $response = new Created($result); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
@@ -139,29 +165,38 @@ class TagController
     public function updateTag(int $id): void
     {
         try {
-            $currentUser = $_SESSION['user'] ?? 'Guest';
-
+            // Sanitize the ID
+            $id = InputSanitizer::sanitizeId($id);
+            if ($id === null) {
+                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
+                $errorResponse->send();
+                return;
+            }
             $data = json_decode(file_get_contents('php://input'), true);
+            // Sanitize client data
+            $sanitizedData = InputSanitizer::sanitize([
+                'name' => $data['name']
+            ]);
 
-            if (empty($data['name'])) {
-                $errorResponse = new BadRequest("Tag name is required."); // 400 Bad Request
+            if (empty($sanitizedData['name'])) {
+                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to update the tag"]); // 400 Bad Request
                 $errorResponse->send();
                 return;
             }
 
-            $tag = new Tag($id, $data['name']);
+            $tag = new Tag($id, $sanitizedData['name']);
             $result = $this->tagService->updateTag($tag);
 
             if (!$result) {
-                $errorResponse = new NotFound("Tag with ID $id not found."); // 404 Not Found
+                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 $errorResponse->send();
                 return;
             }
 
-            $response = new Ok(['user' => $currentUser,'result'=>$result]); // 200 OK response
+            $response = new Ok($result); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
@@ -178,12 +213,19 @@ class TagController
     public function deleteTag(int $id): void
     {
         try {
+            // Sanitize the ID
+            $id = InputSanitizer::sanitizeId($id);
+            if ($id === null) {
+                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
+                $errorResponse->send();
+                return;
+            }
+
+            // Fetch the tag to check if it exists
             $tag = $this->tagService->getTagById($id);
 
-            // Check if the tag is used by any facilities
-            $this->tagService->isTagUsedByFacilities($id);
             if (!$tag) {
-                $errorResponse = new NotFound("Tag with ID $id not found."); // 404 Not Found
+                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 $errorResponse->send();
                 return;
             }
@@ -193,7 +235,7 @@ class TagController
             $response = new NoContent(); // 204 No Content response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError($e->getMessage()); // 500 Internal Server Error
+            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
