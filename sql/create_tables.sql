@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS Facilities (
     name VARCHAR(255) NOT NULL,
     creation_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     location_id INT NOT NULL,
-    UNIQUE (name, location_id),
     FOREIGN KEY (location_id) REFERENCES Locations(id) ON DELETE CASCADE
 );
 
