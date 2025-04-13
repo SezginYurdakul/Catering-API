@@ -10,11 +10,11 @@ interface ILocationService
 {
     /**
      * Get all locations.
-     * Retrieves a list of all locations.
+     * Retrieves a paginated list of all locations.
      * 
-     *@param int $page 
-     *@param int $perPage
-     * @return array An array of Location objects.
+     * @param int $page
+     * @param int $perPage
+     * @return array
      */
     public function getAllLocations(int $page, int $perPage): array;
 
@@ -22,8 +22,8 @@ interface ILocationService
      * Get a location by its ID.
      * Retrieves a specific location by its unique ID.
      *
-     * @param int $id The ID of the location to retrieve.
-     * @return Location The Location object corresponding to the given ID.
+     * @param int $id
+     * @return Location
      */
     public function getLocationById(int $id): Location;
 
@@ -31,43 +31,43 @@ interface ILocationService
      * Create a new location.
      * Adds a new location to the database.
      *
-     * @param Location $location The Location object containing the details of the new location.
-     * @return string A success message indicating the location was created.
+     * @param Location $location
+     * @return array
      */
-    public function createLocation(Location $location): string;
+    public function createLocation(Location $location): array;
 
     /**
      * Update an existing location.
      * Updates the details of an existing location in the database.
      *
-     * @param Location $location The Location object containing the updated details.
-     * @return string A success message indicating the location was updated.
+     * @param Location $location
+     * @return array
      */
-    public function updateLocation(Location $location): string;
+    public function updateLocation(Location $location): array;
 
     /**
      * Delete a location.
      * Removes a location from the database.
      *
-     * @param Location $location The Location object representing the location to delete.
-     * @return string A success message indicating the location was deleted.
+     * @param int $id
+     * @return string
      */
-    public function deleteLocation(Location $location): string;
-
+    public function deleteLocation(int $id): string;
 
     /**
      * Check if a location is used by any facilities.
      * Determines if a location is associated with any facilities in the database.
      *
-     * @param int $locationId The ID of the location to check.
-     * @return bool True if the location is used by any facilities, false otherwise.
+     * @param int $locationId
+     * @return bool
      */
     public function isLocationUsedByFacilities(int $locationId): bool;
 
     /**
      * Get the total number of locations.
+     * Retrieves the total count of locations in the database.
      *
-     * @return int The total number of locations.
+     * @return int
      */
     public function getTotalLocationsCount(): int;
 }

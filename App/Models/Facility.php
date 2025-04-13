@@ -4,25 +4,28 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\LocationService;
+use App\Models\Location;
+
 class Facility
 {
     public int $id;
     public string $name;
-    public int $location_id;
     public string $creation_date;
-    public array $tags = [];
+    public ?array $tagIds; 
+    public Location $location; 
 
     public function __construct(
         int $id,
         string $name,
-        int $location_id,
+        Location $location, 
         string $creation_date,
-        array $tags
+        ?array $tagIds = null 
     ) {
         $this->id = $id;
         $this->name = $name;
-        $this->location_id = $location_id;
+        $this->location = $location;
         $this->creation_date = $creation_date;
-        $this->tags = $tags;
+        $this->tagIds = $tagIds ?? []; 
     }
 }

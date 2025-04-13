@@ -9,12 +9,23 @@ use App\Models\Facility;
 interface IFacilityService
 {
     /**
-     * Get all facilities.
-     *@param int $page
-     *@param int $perPage
+     * Get facilities with pagination and optional filters.
+     * Retrieves a paginated list of facilities, optionally filtered by a query string and additional filters.
+     *
+     * @param int $page
+     * @param int $perPage
+     * @param string|null $query
+     * @param array $filters
+     * @param string $operator
      * @return array
      */
-    public function getAllFacilities(int $page, int $perPage): array;
+    public function getFacilities(
+        int $page,
+        int $perPage,
+        ?string $query = null,
+        array $filters = [],
+        string $operator = 'AND'
+    ): array;
 
     /**
      * Get a facility by its ID.
@@ -28,17 +39,21 @@ interface IFacilityService
      * Create a new facility.
      *
      * @param Facility $facility
-     * @return string
+     * @param array $tagIds
+     * @param array $tagNames
+     * @return array|string
      */
-    public function createFacility(Facility $facility): string;
+    public function createFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array|string;
 
     /**
      * Update an existing facility.
      *
      * @param Facility $facility
-     * @return string
+     * @param array $tagIds
+     * @param array $tagNames
+     * @return array
      */
-    public function updateFacility(Facility $facility): string;
+    public function updateFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array;
 
     /**
      * Delete a facility.
@@ -48,20 +63,4 @@ interface IFacilityService
      */
     public function deleteFacility(Facility $facility): string;
 
-    /**
-     * Search for facilities based on a query string.
-     *
-     * @param string $query
-     * @param string $filter
-     * @return array
-     */
-    public function searchFacilities(string $query, string $filter): array;
-
-
-
-    /** Calculate the total number of pages based on the total number of results.
-     * 
-     * @return int
-     */
-    public function getTotalFacilitiesCount(): int;
 }

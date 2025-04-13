@@ -12,6 +12,9 @@ use App\Helpers\Logger;
 use Bramus\Router\Router;
 use App\Services\CustomDb;
 use Exception;
+use App\Repositories\FacilityRepository;
+use App\Repositories\LocationRepository;
+use App\Repositories\TagRepository;
 
 $di = Factory::getDi();
 $config = require __DIR__ . '/config.php';
@@ -77,17 +80,24 @@ $di->setShared('db', function () use ($config) {
 });
 
 // Add FacilityService, LocationService, and TagService to the DI container
-$di->setShared('facilityService', function () use ($di) {
-    $db = $di->getShared('db');
-    return new \App\Services\FacilityService($db);
-});
+
 
 $di->setShared('locationService', function () use ($di) {
     $db = $di->getShared('db');
-    return new \App\Services\LocationService($db);
+    $locationRepository = new LocationRepository($db);
+    return new \App\Services\LocationService($locationRepository);
 });
 
 $di->setShared('tagService', function () use ($di) {
     $db = $di->getShared('db');
-    return new \App\Services\TagService($db);
+    $tagRepository = new TagRepository($db);
+    return new \App\Services\TagService($tagRepository);
+});
+
+$di->setShared('facilityService', function () use ($di) {
+    $db = $di->getShared('db');
+    $facilityRepository = new FacilityRepository($db);
+    $locationService = $di->getShared('locationService');
+    $tagService = $di->getShared('tagService');
+    return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService);
 });

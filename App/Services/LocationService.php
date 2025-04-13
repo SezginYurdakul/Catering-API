@@ -3,42 +3,72 @@
 namespace App\Services;
 
 use App\Models\Location;
-use App\Services\CustomDb;
-use PDO;
+use App\Repositories\LocationRepository;
 use App\Helpers\InputSanitizer;
 use App\Helpers\PaginationHelper;
 
 class LocationService implements ILocationService
 {
-    private $db;
+    private $locationRepository;
 
-    public function __construct(CustomDb $db)
+    public function __construct(LocationRepository $locationRepository)
     {
-        $this->db = $db;
+        $this->locationRepository = $locationRepository;
     }
 
     /**
-     * Get all locations
-     * 
+     * Get all locations with pagination.
+     *
      * @param int $page
      * @param int $perPage
+     * @return array
      * @throws \Exception
-     * @return array{locations: Location[], pagination: array}
-
      */
-    public function getAllLocations(int $page = 1, int $perPage = 10): array
+    public function getAllLocations(int $page, int $perPage): array
     {
-        $offset = ($page - 1) * $perPage;
-        $query = "
-        SELECT * 
-        FROM Locations
-        LIMIT $perPage OFFSET $offset
-    ";
-    
-        $stmt = $this->db->executeSelectQuery($query);
-        $locationsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $offset = ($page - 1) * $perPage;
+            $locationsData = $this->locationRepository->getAllLocations($perPage, $offset);
 
-        $locations = array_map(function ($locationData) {
+            $locations = array_map(function ($locationData) {
+                return new Location(
+                    $locationData['id'],
+                    $locationData['city'],
+                    $locationData['address'],
+                    $locationData['zip_code'],
+                    $locationData['country_code'],
+                    $locationData['phone_number']
+                );
+            }, $locationsData);
+
+            $totalItems = $this->locationRepository->getTotalLocationsCount();
+            $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+
+            return [
+                'locations' => $locations,
+                'pagination' => $pagination
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to retrieve locations: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get a location by ID.
+     *
+     * @param int $id
+     * @return Location
+     * @throws \Exception
+     */
+    public function getLocationById(int $id): Location
+    {
+        try {
+            $locationData = $this->locationRepository->getLocationById($id);
+
+            if (!$locationData) {
+                throw new \Exception("Location with ID $id does not exist.");
+            }
+
             return new Location(
                 $locationData['id'],
                 $locationData['city'],
@@ -47,194 +77,136 @@ class LocationService implements ILocationService
                 $locationData['country_code'],
                 $locationData['phone_number']
             );
-        }, $locationsData);
-
-        // Get the total number of locations
-        $totalItems = (int) $this->getTotalLocationsCount();
-        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
-
-        return [
-            'locations' => $locations,
-            'pagination' => $pagination
-        ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to retrieve location with ID $id: " . $e->getMessage());
+        }
     }
 
     /**
-     * Get one location by its ID
-     * @param int $id
-     * @throws \Exception
-     * @return Location
-     */
-    public function getLocationById(int $id): Location
-    {
-        $query = "SELECT * FROM Locations WHERE id = :id";
-        $stmt = $this->db->executeSelectQuery($query, [':id' => $id]);
-        $locationData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$locationData) {
-            throw new \Exception("Location with ID $id does not exist.");
-        }
-
-        return new Location(
-            $locationData['id'],
-            $locationData['city'],
-            $locationData['address'],
-            $locationData['zip_code'],
-            $locationData['country_code'],
-            $locationData['phone_number']
-        );
-    }
-
-    /**
-     * Create a new location
-     * 
-     * @param Location $location
-     * @throws \Exception
-     * @return string
-     */
-    public function createLocation(Location $location): string
-    {
-        // Sanitize client data
-        $sanitizedData = InputSanitizer::sanitize([
-            'city' => $location->city,
-            'address' => $location->address,
-            'zip_code' => $location->zip_code,
-            'country_code' => $location->country_code,
-            'phone_number' => $location->phone_number
-        ]);
-
-        $query = "INSERT INTO Locations (city, address, zip_code, country_code, phone_number) 
-                  VALUES (:city, :address, :zip_code, :country_code, :phone_number)";
-        $bind = [
-            ':city' => $location->city,
-            ':address' => $location->address,
-            ':zip_code' => $location->zip_code,
-            ':country_code' => $location->country_code,
-            ':phone_number' => $location->phone_number
-        ];
-        $result = $this->db->executeQuery($query, $bind);
-
-        if ($result) {
-            return "Location '{$location->city}' successfully created.";
-        }
-
-        throw new \Exception("Failed to create the location.");
-    }
-
-    /**
-     * Update an existing location
-     * 
-     * @param Location $location
-     * @throws \Exception
-     * @return string
-     */
-    public function updateLocation(Location $location): string
-    {
-        // Sanitize client data
-        $sanitizedData = InputSanitizer::sanitize([
-            'city' => $location->city,
-            'address' => $location->address,
-            'zip_code' => $location->zip_code,
-            'country_code' => $location->country_code,
-            'phone_number' => $location->phone_number
-        ]);
-
-        // Map the sanitized data to an array of fields and bindings
-        $locationObject = new Location(
-            $location->id,
-            $sanitizedData['city'] ?? null,
-            $sanitizedData['address'] ?? null,
-            $sanitizedData['zip_code'] ?? null,
-            $sanitizedData['country_code'] ?? null,
-            $sanitizedData['phone_number'] ?? null
-        );
-
-        $mappedData = $this->mapLocationToUpdateFields($locationObject);
-
-        if (empty($mappedData['fields'])) {
-            throw new \Exception("No valid fields provided for update.");
-        }
-
-        $query = "UPDATE Locations SET " . implode(", ", $mappedData['fields']) . " WHERE id = :id";
-        $mappedData['bind'][':id'] = $location->id;
-
-        // Execute the query
-        $result = $this->db->executeQuery($query, $mappedData['bind']);
-
-        if ($result) {
-            return "Location with ID {$location->id} successfully updated.";
-        }
-
-        throw new \Exception("Failed to update the location with ID {$location->id}.");
-    }
-
-    /**
-     * Delete an existing location
-     * 
-     * @param Location $location
-     * @throws \Exception
-     * @return string
-     */
-    public function deleteLocation(Location $location): string
-    {
-        $query = "DELETE FROM Locations WHERE id = :id";
-        $bind = [':id' => $location->id];
-        $result = $this->db->executeQuery($query, $bind);
-
-        if ($result) {
-            return "Location with ID {$location->id} successfully deleted.";
-        }
-
-        throw new \Exception("Failed to delete the location with ID {$location->id}.");
-    }
-
-    /**
-     * Map the location object to an array of fields and bindings for update
-     * 
+     * Create a new location.
+     *
      * @param Location $location
      * @return array
+     * @throws \Exception
      */
-    private function mapLocationToUpdateFields(Location $location): array
+    public function createLocation(Location $location): array
     {
-        $fields = [];
-        $bind = [];
+        try {
+            $data = [
+                ':city' => $location->city,
+                ':address' => $location->address,
+                ':zip_code' => $location->zip_code,
+                ':country_code' => $location->country_code,
+                ':phone_number' => $location->phone_number
+            ];
 
-        // Get all properties of the Location model
-        foreach (get_object_vars($location) as $property => $value) {
-            // Skip null or empty values
-            if (!empty($value) && $property !== 'id') {
-                $fields[] = "$property = :$property";
-                $bind[":$property"] = $value;
-            }
+            $lastLocationId = $this->locationRepository->createLocation($data);
+
+            $locationObject = new Location(
+                (int) $lastLocationId,
+                $location->city,
+                $location->address,
+                $location->zip_code,
+                $location->country_code,
+                $location->phone_number
+            );
+
+            return [
+                "message" => "Location with ID: '{$lastLocationId}' successfully created.",
+                "location" => $locationObject
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to create location: " . $e->getMessage());
         }
-
-        return ['fields' => $fields, 'bind' => $bind];
     }
 
+    /**
+     * Update a location.
+     *
+     * @param Location $location
+     * @return array
+     * @throws \Exception
+     */
+    public function updateLocation(Location $location): array
+    {
+        try {
+            $sanitizedData = InputSanitizer::sanitize([
+                'city' => $location->city,
+                'address' => $location->address,
+                'zip_code' => $location->zip_code,
+                'country_code' => $location->country_code,
+                'phone_number' => $location->phone_number
+            ]);
+
+            $fields = array_filter($sanitizedData, fn($value) => !is_null($value) && $value !== '');
+
+            if (empty($fields)) {
+                throw new \Exception("No valid fields provided for update.");
+            }
+
+            $this->locationRepository->updateLocation($location->id, $fields);
+
+            return [
+                "message" => "Location with ID {$location->id} successfully updated.",
+                "location" => $location
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to update location with ID {$location->id}: " . $e->getMessage());
+        }
+    }
 
     /**
-     * Check if a location is used by any facilities
-     * 
+     * Delete a location.
+     *
+     * @param int $id
+     * @return string
+     * @throws \Exception
+     */
+    public function deleteLocation(int $id): string
+    {
+        try {
+            if ($this->locationRepository->isLocationUsedByFacilities($id)) {
+                throw new \InvalidArgumentException("Location with ID $id cannot be deleted because it is associated with one or more facilities.");
+            }
+
+            $this->locationRepository->deleteLocation($id);
+
+            return "Location with ID {$id} successfully deleted.";
+        } catch (\InvalidArgumentException $e) {
+            throw $e; // Re-throw specific exception
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to delete location with ID $id: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a location is used by facilities.
+     *
      * @param int $locationId
      * @return bool
+     * @throws \Exception
      */
     public function isLocationUsedByFacilities(int $locationId): bool
     {
-        $query = "SELECT COUNT(*) FROM Facilities WHERE location_id = :location_id";
-        $stmt = $this->db->executeSelectQuery($query, [':location_id' => $locationId]);
-        $count = $stmt->fetchColumn();
-
-        return $count > 0;
+        try {
+            return $this->locationRepository->isLocationUsedByFacilities($locationId);
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to check if location with ID $locationId is used by facilities: " . $e->getMessage());
+        }
     }
 
-    /**Helper method to get the total number of locations
-     * 
+    /**
+     * Get the total count of locations.
+     *
      * @return int
+     * @throws \Exception
      */
     public function getTotalLocationsCount(): int
     {
-        $query = "SELECT COUNT(*) AS total FROM Locations";
-        $stmt = $this->db->executeSelectQuery($query);
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        try {
+            return $this->locationRepository->getTotalLocationsCount();
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to retrieve the total count of locations: " . $e->getMessage());
+        }
     }
 }
