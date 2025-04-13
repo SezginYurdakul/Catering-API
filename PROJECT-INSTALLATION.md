@@ -45,14 +45,16 @@ Your project should now be ready to use! Open your browser and navigate to `http
 2. **Download the project**:  
    Clone or download the project folder `web_backend_test_catering_api` from the repository.
 
-3. **Prepare the .env file**:  
-   In the root directory of the project, create a .env file with the following content:
+3.1 **Prepare the .env file**:  
+   In the root directory of the project, create a .env file with the following content:Those are for database crediantials.
    ```properties
    DB_HOST=db
    DB_DATABASE=catering_db
    DB_USERNAME=admin
    DB_PASSWORD=admin
    ```
+
+
 
 4. **Start Docker containers**:  
    In the root directory of the project, run the following command in the terminal:
