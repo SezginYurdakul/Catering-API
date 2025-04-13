@@ -5,451 +5,235 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Facility;
-use App\Models\Location;
-use App\Models\Tag;
-use App\Services\CustomDb;
-use PDO;
-use App\Helpers\InputSanitizer;
+use App\Repositories\FacilityRepository;
 use App\Helpers\PaginationHelper;
 
 class FacilityService implements IFacilityService
 {
-    private $db;
+    private $facilityRepository;
+    private $locationService;
+    private $tagService;
 
-    public function __construct(CustomDb $db)
-    {
-        $this->db = $db;
+    public function __construct(
+        FacilityRepository $facilityRepository,
+        ILocationService $locationService,
+        ITagService $tagService
+    ) {
+        $this->facilityRepository = $facilityRepository;
+        $this->locationService = $locationService;
+        $this->tagService = $tagService;
     }
 
-    /** Get all facilities
-     * 
+    /**
+     * Get facilities with pagination and optional filters.
+     * Retrieves a paginated list of facilities, optionally filtered by a query string and additional filters.
+     *
      * @param int $page
      * @param int $perPage
+     * @param string|null $query
+     * @param array $filters
+     * @param string $operator
      * @return array
      */
-    public function getAllFacilities(int $page, int $perPage): array
-    {
-        // Calculate offset and limit
-        $offset = ($page - 1) * $perPage;
-
-        // Query to get facilities with pagination
-        $query = "
-            SELECT 
-                f.id AS facility_id, 
-                f.name AS facility_name, 
-                f.location_id, 
-                f.creation_date, 
-                GROUP_CONCAT(t.name) AS tags
-            FROM 
-                Facilities f
-            LEFT JOIN 
-                Facility_Tags ft ON f.id = ft.facility_id
-            LEFT JOIN 
-                Tags t ON ft.tag_id = t.id
-            GROUP BY 
-                f.id
-            LIMIT $perPage OFFSET $offset
-        ";
-
-        $stmt = $this->db->executeSelectQuery($query);
-        $facilitiesData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Map each facility to the Facility model
-        $facilities = array_map(function ($facilityData) {
-            $tags = $facilityData['tags'] ? explode(',', $facilityData['tags']) : [];
-            return new Facility(
-                $facilityData['facility_id'],
-                $facilityData['facility_name'],
-                $facilityData['location_id'],
-                $facilityData['creation_date'],
-                $tags // Pass the tags as an array
-            );
-        }, $facilitiesData);
-
-        // Generate pagination metadata
-        $totalItems = (int) $this->getTotalFacilitiesCount();
-        $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
-
-        return [
-            'facilities' => $facilities,
-            'pagination' => $pagination
-        ];
-    }
-
-    /** Get a single facility by ID
-     * 
-     * @param int $id
-     * @return Facility
-     * @throws \Exception
-     */
-    public function getFacilityById(int $id): Facility
-    {
-        $query = "
-            SELECT 
-                f.id AS facility_id, 
-                f.name AS facility_name, 
-                f.location_id, 
-                f.creation_date, 
-                GROUP_CONCAT(t.name) AS tags
-            FROM 
-                Facilities f
-            LEFT JOIN 
-                Facility_Tags ft ON f.id = ft.facility_id
-            LEFT JOIN 
-                Tags t ON ft.tag_id = t.id
-            WHERE 
-                f.id = :id
-            GROUP BY 
-                f.id
-        ";
-
-        $stmt = $this->db->executeSelectQuery($query, [':id' => $id]);
-        $facilityData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$facilityData) {
-            throw new \Exception("Facility with ID $id does not exist.");
-        }
-
-        $tags = $facilityData['tags'] ? explode(',', $facilityData['tags']) : [];
-
-        return new Facility(
-            $facilityData['facility_id'],
-            $facilityData['facility_name'],
-            $facilityData['location_id'],
-            $facilityData['creation_date'],
-            $tags // Pass the tags as an array
-        );
-    }
-
-    /** Create a new facility
-     * 
-     * @param Facility $facility
-     * @return string
-     * @throws \Exception
-     */
-    public function createFacility(Facility $facility): string
-    {
-        // Start a transaction
-        $this->db->beginTransaction();
-
+    public function getFacilities(
+        int $page,
+        int $perPage,
+        ?string $query = null,
+        array $filters = [],
+        string $operator = 'OR'
+    ): array {
         try {
-            // Sanitize facility data
-            $sanitizedData = InputSanitizer::sanitize([
-                'name' => $facility->name,
-                'location_id' => $facility->location_id,
-            ]);
+            $offset = ($page - 1) * $perPage;
 
-            $facility->name = $sanitizedData['name'];
-            $facility->location_id = (int) $sanitizedData['location_id'];
+            $whereData = $this->buildWhereClause($filters, $query, $operator);
+            $whereClause = $whereData['whereClause'];
+            $bind = $whereData['bind'];
 
-            // Check if the location exists
-            $this->checkIfLocationExists($facility->location_id);
+            if (empty($whereClause)) {
+                $whereClause = '1';
+            }
 
-            // Insert the facility
-            $query = "INSERT INTO Facilities (name, location_id) VALUES (:name, :location_id)";
-            $bind = [
-                ':name' => $facility->name,
-                ':location_id' => $facility->location_id
+            $facilitiesData = $this->facilityRepository->getFacilities($whereClause, $bind, $perPage, $offset);
+
+            $facilities = [];
+            foreach ($facilitiesData as $facilityData) {
+                $location = $this->locationService->getLocationById($facilityData['location_id']);
+                $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
+
+                $facilities[] = new Facility(
+                    $facilityData['facility_id'],
+                    $facilityData['facility_name'],
+                    $location,
+                    $facilityData['creation_date'],
+                    $tags
+                );
+            }
+
+            $totalItems = $this->facilityRepository->getTotalFacilitiesCount();
+            $pagination = PaginationHelper::paginate($totalItems, $page, $perPage);
+
+            return [
+                'facilities' => $facilities,
+                'pagination' => $pagination
             ];
-            $result = $this->db->executeQuery($query, $bind);
-
-            if (!$result) {
-                throw new \Exception("Failed to create the facility.");
-            }
-
-            // Get the last inserted facility ID
-            $facilityId = $this->db->getLastInsertedIdAsInt();
-
-            // Update facility tags relation
-            if (!empty($facility->tags)) {
-                $this->manageFacilityTags($facilityId, $facility->tags);
-            }
-
-            // Commit the transaction
-            $this->db->commit();
-
-            return "Facility '{$facility->name}' successfully created with ID $facilityId.";
         } catch (\Exception $e) {
-            // Rollback the transaction if any error occurs
-            $this->db->rollBack();
-            throw $e;
-        }
-    }
-
-    /** Update an existing facility
-     * 
-     * @param Facility $facility
-     * @return string
-     * @throws \Exception
-     */
-    public function updateFacility(Facility $facility): string
-    {
-        // Start a transaction
-        $this->db->beginTransaction();
-
-        try {
-            // Check if the facility exists
-            $this->checkIfFacilityExists($facility->id);
-
-            // Sanitize facility data
-            $sanitizedData = InputSanitizer::sanitize([
-                'name' => $facility->name,
-                'location_id' => $facility->location_id,
-            ]);
-
-            $facility->name = $sanitizedData['name'];
-            $facility->location_id = $sanitizedData['location_id'] ? (int) $sanitizedData['location_id'] : null;
-
-            // Check if the location exists
-            if (!empty($facility->location_id)) {
-                $this->checkIfLocationExists($facility->location_id);
-            }
-
-            // Build the dynamic update query
-            $fields = [];
-            $bind = [':id' => $facility->id];
-
-            if (!empty($facility->name)) {
-                $fields[] = "name = :name";
-                $bind[':name'] = $facility->name;
-            }
-
-            if (!empty($facility->location_id)) {
-                $fields[] = "location_id = :location_id";
-                $bind[':location_id'] = $facility->location_id;
-            }
-
-            if (empty($fields)) {
-                throw new \Exception("No valid fields provided for update.");
-            }
-
-            $query = "UPDATE Facilities SET " . implode(", ", $fields) . " WHERE id = :id";
-            $result = $this->db->executeQuery($query, $bind);
-
-            if (!$result) {
-                throw new \Exception("Failed to update the facility with ID {$facility->id}.");
-            }
-
-            // Update facility tags relation
-            if ($facility->tags !== null) {
-                $this->manageFacilityTags($facility->id, $facility->tags);
-            }
-
-            // Commit the transaction
-            $this->db->commit();
-
-            return "Facility with ID {$facility->id} successfully updated.";
-        } catch (\Exception $e) {
-            // Rollback the transaction if any error occurs
-            $this->db->rollBack();
-            throw $e;
-        }
-    }
-
-    /** Delete a facility by ID
-     * 
-     * @param Facility $facility
-     * @return string
-     * @throws \Exception
-     */
-    public function deleteFacility(Facility $facility): string
-    {
-        $this->checkIfFacilityExists($facility->id);
-
-        // Delete the facility
-        $query = "DELETE FROM Facilities WHERE id = :id";
-        $bind = [':id' => $facility->id];
-        $result = $this->db->executeQuery($query, $bind);
-
-        if ($result) {
-            return "Facility with ID {$facility->id} successfully deleted.";
-        }
-
-        throw new \Exception("Failed to delete the facility with ID {$facility->id}.");
-    }
-
-    /** Search facilities by parameters
-     * 
-     * @param string $query
-     * @param string $filter
-     * @return array
-     */
-    public function searchFacilities(string $query, string $filter): array
-    {
-        // Sanitize query
-        $query = InputSanitizer::sanitize(['query' => $query])['query'];
-        $query = '%' . $query . '%'; // Add wildcards to the query for partial matching
-
-        // Build the WHERE clause
-        $whereClause = $this->buildWhereClause($filter);
-
-        // Build the SQL query
-        $sql = "
-            SELECT 
-                f.id AS facility_id,
-                f.name AS facility_name,
-                l.city AS location_city,
-                GROUP_CONCAT(t.name) AS tags
-            FROM 
-                Facilities f
-            LEFT JOIN 
-                Locations l ON f.location_id = l.id
-            LEFT JOIN 
-                Facility_Tags ft ON f.id = ft.facility_id
-            LEFT JOIN 
-                Tags t ON ft.tag_id = t.id
-            WHERE 
-                $whereClause
-            GROUP BY 
-                f.id
-        ";
-
-        // Execute the query
-        $stmt = $this->db->executeSelectQuery($sql, [':query' => $query]);
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Convert the string tags into an array
-        return $this->convertTagsIntoArray($results);
-    }
-
-    /** Helper method to check if a location exists
-     * 
-     * @param int $locationId
-     * @return void
-     * @throws \Exception
-     */
-    private function checkIfLocationExists(int $locationId): void
-    {
-        $query = "SELECT COUNT(*) FROM Locations WHERE id = :location_id";
-        $stmt = $this->db->executeSelectQuery($query, [':location_id' => $locationId]);
-        $exists = $stmt->fetchColumn();
-
-        if (!$exists) {
-            throw new \Exception("The specified location_id does not exist.");
-        }
-    }
-
-    /** Helper method to check if a facility exists
-     * 
-     * @param int $facilityId 
-     * @return void
-     * @throws \Exception
-     */
-    private function checkIfFacilityExists(int $facilityId): void
-    {
-        $query = "SELECT COUNT(*) FROM Facilities WHERE id = :id";
-        $stmt = $this->db->executeSelectQuery($query, [':id' => $facilityId]);
-        $exists = $stmt->fetchColumn();
-
-        if (!$exists) {
-            throw new \Exception("The specified facility does not exist.");
+            throw new \Exception("Failed to retrieve facilities: " . $e->getMessage());
         }
     }
 
     /**
-     * Synchronize the tags associated with a facility.
-     * This method first validates all provided tags. If any tag is invalid, no changes are made.
-     * If all tags are valid, it removes all existing tags associated with the given facility
-     * and then links the provided tags to the facility.
-     * 
-     * @param int $facilityId The ID of the facility.
-     * @param array $tags An array of tag IDs to associate with the facility.
-     * @return void
-     * @throws \Exception If any tag ID is invalid.
+     * Get a facility by its ID.
+     *
+     * @param int $id
+     * @return Facility
      */
-    private function manageFacilityTags(int $facilityId, array $tags): void
+    public function getFacilityById(int $id): Facility
     {
-        // Step 1: Validate all tags
-        foreach ($tags as $tagId) {
-            $tagQuery = "SELECT COUNT(*) FROM Tags WHERE id = :id";
-            $tagStmt = $this->db->executeSelectQuery($tagQuery, [':id' => $tagId]);
-            $tagExists = $tagStmt->fetchColumn();
+        try {
+            $facilityData = $this->facilityRepository->getFacilityById($id);
 
-            if (!$tagExists) {
-                throw new \Exception("Tag with ID $tagId does not exist. No changes were made.");
+            if (!$facilityData) {
+                throw new \Exception("Facility with ID $id does not exist.");
             }
-        }
 
-        // Step 2: Delete all existing tags for the facility
-        $deleteTagsQuery = "DELETE FROM Facility_Tags WHERE facility_id = :facility_id";
-        $this->db->executeQuery($deleteTagsQuery, [':facility_id' => $facilityId]);
+            $location = $this->locationService->getLocationById($facilityData['location_id']);
+            $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
 
-        // Step 3: Link the new tags to the facility
-        foreach ($tags as $tagId) {
-            $this->linkTagToFacility($facilityId, $tagId);
+            return new Facility(
+                $facilityData['facility_id'],
+                $facilityData['facility_name'],
+                $location,
+                $facilityData['creation_date'],
+                $tags
+            );
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to retrieve facility: " . $e->getMessage());
         }
     }
 
-    /** Helper method to link a tag to a facility
-     * 
-     * @param int $facilityId The facility ID.
-     * @param int $tagId The tag ID.
-     * @return void
-     * @throws \Exception If the tag does not exist.
+    /**
+     * Create a new facility.
+     * Creates a new facility and associates it with tags if provided.
+     * @param Facility $facility
+     * @param array $tagIds
+     * @param array $tagNames
+     * @return array|string
      */
-    private function linkTagToFacility(int $facilityId, int $tagId): void
+    public function createFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array|string
     {
-        // Check if the tag exists
-        $tagQuery = "SELECT COUNT(*) FROM Tags WHERE id = :id";
-        $tagStmt = $this->db->executeSelectQuery($tagQuery, [':id' => $tagId]);
-        $tagExists = $tagStmt->fetchColumn();
+        try {
+            // Create the facility
+            $createdFacilityId = $this->facilityRepository->createFacility([
+                ':name' => $facility->name,
+                ':location_id' => $facility->location->id
+            ]);
 
-        if (!$tagExists) {
-            throw new \Exception("Tag with ID $tagId does not exist.");
-        }
+            // Handle tagIds
+            if (!empty($tagIds)) {
+                $this->facilityRepository->addTagsToFacility($createdFacilityId, $tagIds);
+            }
 
-        // Insert into facility_tags
-        $facilityTagQuery = "INSERT INTO Facility_Tags (facility_id, tag_id) VALUES (:facility_id, :tag_id)";
-        $this->db->executeQuery($facilityTagQuery, [
-            ':facility_id' => $facilityId,
-            ':tag_id' => $tagId
-        ]);
-    }
+            // Handle tagNames (if provided, create new tags and associate them)
+            if (!empty($tagNames)) {
+                foreach ($tagNames as $tagName) {
+                    // Tag nesnesi oluştur
+                    $tag = new \App\Models\Tag(0, $tagName);
+                    $tagId = $this->tagService->createTag($tag)['tag']->id; // Yeni oluşturulan tag ID'sini al
+                    $this->facilityRepository->addTagsToFacility($createdFacilityId, [$tagId]);
+                }
+            }
+            // Retrieve the created facility object
+            $createdFacilityObject = $this->getFacilityById($createdFacilityId);
 
-    /** Helper method to build the WHERE clause based on the filter
-     * 
-     * @param string $filter
-     * @return string
-     */
-    private function buildWhereClause(string $filter): string
-    {
-        switch ($filter) {
-            case 'facility':
-                return 'f.name LIKE :query';
-            case 'city':
-                return 'l.city LIKE :query';
-            case 'tag':
-                return 't.name LIKE :query';
-            default:
-                return 'f.name LIKE :query OR l.city LIKE :query OR t.name LIKE :query';
+            return [
+                "message" => "Facility '{$facility->name}' successfully created.",
+                "facility" => $createdFacilityObject
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to create facility: " . $e->getMessage());
         }
     }
 
-    /** Helper method to convert tags into an array
-     * 
-     * @param array $results
+    /**
+     * Update a facility.
+     * Updates the facility's name and location, and optionally adds tags.
+     * @param $facility
+     * @param array $tagIds
+     * @param array $tagNames
      * @return array
      */
-    private function convertTagsIntoArray(array $results): array
+    public function updateFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array
     {
-        foreach ($results as &$result) {
-            if (!empty($result['tags'])) {
-                $result['tags'] = explode(',', $result['tags']);
-            } else {
-                $result['tags'] = [];
+        try {
+            $fields = [
+                'name' => $facility->name,
+                'location_id' => $facility->location->id
+            ];
+
+            $this->facilityRepository->updateFacility($facility->id, $fields);
+            // Handle tagIds
+            if (!empty($tagIds)) {
+                $this->facilityRepository->addTagsToFacility($facility->id, $tagIds);
             }
+
+            $updatedFacilityObject = $this->getFacilityById($facility->id);
+
+            return [
+                "message" => "Facility '{$facility->name}' successfully updated.",
+                "facility" => $updatedFacilityObject
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to create facility: " . $e->getMessage());
         }
-        return $results;
     }
 
-    /** Helper method to get the total number of facilities
-     * 
-     * @return int
+    /**
+     * Delete a facility.
+     * Deletes the facility and its associated tags.
+     * @param Facility $facility
+     * @return string
      */
-    public function getTotalFacilitiesCount(): int
+    public function deleteFacility(Facility $facility): string
     {
-        $query = "SELECT COUNT(*) AS total FROM Facilities";
-        $stmt = $this->db->executeSelectQuery($query);
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        try {
+            $this->facilityRepository->deleteFacility($facility->id);
+
+            return "Facility with ID {$facility->id} successfully deleted.";
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to delete facility: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build the WHERE clause for the SQL query based on filters and query string.
+     * @param array $filters
+     * @param string|null $query
+     * @param string $operator
+     * @return array
+     */
+    private function buildWhereClause(array $filters, ?string $query, string $operator): array
+    {
+        $whereClause = [];
+        $bind = [];
+
+        // Add query filter
+        if ($query) {
+            $whereClause[] = "(f.name LIKE :query)";
+            $bind[':query'] = "%$query%";
+        }
+
+        // Add additional filters
+        foreach ($filters as $key => $value) {
+            $whereClause[] = "f.$key = :$key";
+            $bind[":$key"] = $value;
+        }
+
+        // Combine filters with the specified operator (AND/OR)
+        $whereClauseString = implode(" $operator ", $whereClause);
+
+        return [
+            'whereClause' => $whereClauseString,
+            'bind' => $bind
+        ];
     }
 }
