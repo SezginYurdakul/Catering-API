@@ -70,4 +70,25 @@ interface ILocationService
      * @return int
      */
     public function getTotalLocationsCount(): int;
+
+    /**
+     * Create a location object.
+     * Constructs a Location object with the provided details.
+     *
+     * @param int $id
+     * @param string $name
+     * @param string $address
+     * @param string $city
+     * @param string $state
+     * @param string $zipCode
+     * @return Location
+     */
+    public function createLocationObject(
+        int $id,
+        string $name,
+        string $address,
+        string $city,
+        string $state,
+        string $zipCode
+    ): Location;
 }

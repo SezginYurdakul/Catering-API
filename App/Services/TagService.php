@@ -161,4 +161,15 @@ class TagService implements ITagService
             throw new \Exception("Failed to delete tag with ID {$tag->id}: " . $e->getMessage());
         }
     }
+
+    /**
+     * Create tag object
+     * @param int $id
+     * @param string $name
+     * @return Tag
+     */
+    public function createTagObject(int $id, string $name): Tag
+    {
+        return new Tag($id, $name);
+    }
 }

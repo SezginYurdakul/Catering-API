@@ -135,7 +135,7 @@ class FacilityRepository
 
             return $id;
         } catch (\Exception $e) {
-            throw new \Exception("Failed to update facility with ID $id: " . $e->getMessage());
+            throw new \Exception("Failed to update facility in the database: " . $e->getMessage());
         }
     }
 
@@ -202,4 +202,5 @@ class FacilityRepository
             throw new \Exception("Failed to update tags for facility with ID $facilityId: " . $e->getMessage());
         }
     }
+
 }

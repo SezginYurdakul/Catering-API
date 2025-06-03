@@ -209,4 +209,26 @@ class LocationService implements ILocationService
             throw new \Exception("Failed to retrieve the total count of locations: " . $e->getMessage());
         }
     }
+
+    /**
+     * Create a location object.
+     * @param int $id
+     * @param string $city
+     * @param string $address
+     * @param string $zipCode
+     * @param string $countryCode
+     * @param string $phoneNumber
+     * @return Location 
+     */
+    public function createLocationObject(
+        int $id,
+        string $city,
+        string $address,
+        string $zipCode,
+        string $countryCode,
+        string $phoneNumber
+    ): Location {
+        return new Location($id, $city, $address, $zipCode, $countryCode, $phoneNumber);
+    }
+
 }

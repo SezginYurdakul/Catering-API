@@ -7,6 +7,7 @@ namespace App\Routes;
 use App\Controllers\FacilityController;
 use App\Controllers\LocationController;
 use App\Controllers\TagController;
+use App\Controllers\IndexController;
 use App\Plugins\Di\Factory;
 use Bramus\Router\Router;
 
@@ -46,3 +47,6 @@ $router->get('/facilities/search', FacilityController::class . '@getFacilities')
 
 // Auth routes
 $router->post('/auth/login', 'App\Controllers\AuthController@login');
+
+// Test route
+$router->get('/test', IndexController::class.'@test');

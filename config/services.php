@@ -99,5 +99,5 @@ $di->setShared('facilityService', function () use ($di) {
     $facilityRepository = new FacilityRepository($db);
     $locationService = $di->getShared('locationService');
     $tagService = $di->getShared('tagService');
-    return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService);
+    return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService,$db);
 });

@@ -6,18 +6,11 @@ namespace App\Controllers;
 
 use App\Services\ILocationService;
 use App\Helpers\InputSanitizer;
-use App\Models\Location;
+use Psr\Container\ContainerInterface;
 use App\Plugins\Di\Factory;
-use App\Plugins\Http\Response\Ok;
-use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NoContent;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
-use App\Middleware\AuthMiddleware;
 
 
-class LocationController
+class LocationController extends RespondController
 {
     private ILocationService $locationService;
 
@@ -27,8 +20,6 @@ class LocationController
     public function __construct()
     {
         $this->locationService = Factory::getDi()->getShared('locationService');
-        $authMiddleware = new AuthMiddleware();
-        $authMiddleware->handle();
     }
 
     /**
@@ -47,10 +38,9 @@ class LocationController
 
             // Validate pagination parameters
             if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
                 ]);
-                $errorResponse->send();
                 return;
             }
             // Call the service method with pagination
@@ -60,18 +50,15 @@ class LocationController
             $totalItems = $locations['pagination']['total_items'];
             $totalPages = (int) ceil($totalItems / $perPage);
             if ($totalPages > 0 && $page > $totalPages) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "The requested page ($page) exceeds the total number of pages ($totalPages)."
                 ]);
-                $errorResponse->send();
                 return;
             }
             // Send the response
-            $response = new Ok($locations); // 200 OK response
-            $response->send();
+            $this->respondOk($locations); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -90,8 +77,7 @@ class LocationController
             // Sanitize and validate the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
                 return;
             }
 
@@ -99,16 +85,13 @@ class LocationController
             $location = $this->locationService->getLocationById((int) $id);
 
             if (!$location) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new Ok(["location" => $location]); // 200 OK response
-            $response->send();
+            $this->respondOk(["location" => $location]); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -137,16 +120,14 @@ class LocationController
 
             foreach ($requiredFields as $field => $sanitizeMethod) {
                 if (empty($data[$field])) {
-                    $errorResponse = new BadRequest(["error" => "Field '$field' is required.You may type incorrectly."]); // 400 Bad Request
-                    $errorResponse->send();
+                    $this->respondBadRequest(["error" => "Field '$field' is required.You may type incorrectly."]); // 400 Bad Request
                     return;
                 }
 
                 $sanitizedValue = InputSanitizer::$sanitizeMethod($data[$field]);
 
                 if ($sanitizedValue === null) {
-                    $errorResponse = new BadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
-                    $errorResponse->send();
+                    $this->respondBadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
                     return;
                 }
 
@@ -154,7 +135,7 @@ class LocationController
             }
 
             // Create a new Location object
-            $location = new Location(
+            $location = $this->locationService->createLocationObject(
                 0,
                 $sanitizedData['city'],
                 $sanitizedData['address'],
@@ -164,11 +145,9 @@ class LocationController
             );
 
             $result = $this->locationService->createLocation($location);
-            $response = new Created($result); // 201 Created response
-            $response->send();
+            $this->respondCreated($result); // 201 Created response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -188,8 +167,7 @@ class LocationController
             // Sanitize and validate the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
                 return;
             }
 
@@ -210,8 +188,7 @@ class LocationController
                     $sanitizedValue = InputSanitizer::$sanitizeMethod($data[$field]);
 
                     if ($sanitizedValue === null) {
-                        $errorResponse = new BadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
-                        $errorResponse->send();
+                        $this->respondBadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
                         return;
                     }
 
@@ -224,20 +201,18 @@ class LocationController
                 empty($sanitizedData['city']) && empty($sanitizedData['address']) && empty($sanitizedData['zip_code']) &&
                 empty($sanitizedData['country_code']) && empty($sanitizedData['phone_number'])
             ) {
-                $errorResponse = new BadRequest(["error" => "At least one field is required to update the location."]); // 400 Bad Request
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "At least one field is required to update the location."]); // 400 Bad Request
                 return;
             }
 
             // Fetch the existing location to pass not updated fields
             $existingLocation = $this->locationService->getLocationById((int) $id);
             if (!$existingLocation) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $location = new Location(
+            $location = $this->locationService->createLocationObject(
                 (int) $id,
                 $sanitizedData['city'] ?? $existingLocation->city,
                 $sanitizedData['address'] ?? $existingLocation->address,
@@ -249,16 +224,13 @@ class LocationController
             $result = $this->locationService->updateLocation($location);
 
             if (!$result) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
-            $response->send();
+            $this->respondOk($result); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -278,8 +250,7 @@ class LocationController
             // Sanitize and validate the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
                 return;
             }
 
@@ -288,16 +259,13 @@ class LocationController
             $result = $this->locationService->deleteLocation($id);
 
             if (!$result) {
-                $errorResponse = new NotFound(["eror" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["eror" => "Location with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new NoContent(); // 204 No Content response
-            $response->send();
+            $this->respondNoContent(); // 204 No Content response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
         }
     }
 }

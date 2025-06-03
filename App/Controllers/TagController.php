@@ -5,18 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\ITagService;
-use App\Models\Tag;
 use App\Plugins\Di\Factory;
-use App\Plugins\Http\Response\Ok;
-use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NoContent;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
-use App\Middleware\AuthMiddleware;
 use App\Helpers\InputSanitizer;
 
-class TagController
+class TagController extends RespondController
 {
     private ITagService $tagService;
 
@@ -27,8 +19,6 @@ class TagController
     public function __construct()
     {
         $this->tagService = Factory::getDi()->getShared('tagService');
-        $authMiddleware = new AuthMiddleware();
-        $authMiddleware->handle();
     }
 
     /**
@@ -47,10 +37,9 @@ class TagController
 
             // Validate pagination parameters
             if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
                 ]);
-                $errorResponse->send();
                 return;
             }
             // Fetch all tags with pagination
@@ -60,19 +49,16 @@ class TagController
             $totalItems = $tags['pagination']['total_items'];
             $totalPages = (int) ceil($totalItems / $perPage);
             if ($totalPages>0 && $page > $totalPages) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "The requested page ($page) exceeds the total number of pages ($totalPages)."
                 ]);
-                $errorResponse->send();
                 return;
             }
 
 
-            $response = new Ok($tags); // 200 OK response
-            $response->send();
+            $this->respondOk($tags); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -91,23 +77,19 @@ class TagController
             // Sanitize the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
                 return;
             }
             $tag = $this->tagService->getTagById($id);
 
             if (!$tag) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new Ok(['tag' => $tag]); // 200 OK response
-            $response->send();
+            $this->respondOk(['tag' => $tag]); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -136,19 +118,16 @@ class TagController
             }
 
             if (empty($sanitizedData['name'])) {
-                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to create the tag"]); // 400 Bad Request
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Tag name is required.Failed to create the tag"]); // 400 Bad Request
                 return;
             }
 
-            $tag = new Tag(0, $sanitizedData['name']);
+            $tag = $this->tagService->createTagObject(0, $sanitizedData['name']);
             $result = $this->tagService->createTag($tag);
 
-            $response = new Created($result); // 201 Created response
-            $response->send();
+            $this->respondCreated($result); // 201 Created response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
         }
     }
 
@@ -168,8 +147,7 @@ class TagController
             // Sanitize the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
                 return;
             }
             $data = json_decode(file_get_contents('php://input'), true);
@@ -179,25 +157,21 @@ class TagController
             ]);
 
             if (empty($sanitizedData['name'])) {
-                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to update the tag"]); // 400 Bad Request
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Tag name is required.Failed to update the tag"]); // 400 Bad Request
                 return;
             }
 
-            $tag = new Tag($id, $sanitizedData['name']);
+            $tag = $this->tagService->createTagObject($id, $sanitizedData['name']);
             $result = $this->tagService->updateTag($tag);
 
             if (!$result) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new Ok($result); // 200 OK response
-            $response->send();
+            $this->respondOk($result); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -216,8 +190,7 @@ class TagController
             // Sanitize the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
                 return;
             }
 
@@ -225,18 +198,15 @@ class TagController
             $tag = $this->tagService->getTagById($id);
 
             if (!$tag) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
                 return;
             }
 
             $result = $this->tagService->deleteTag($tag);
 
-            $response = new NoContent(); // 204 No Content response
-            $response->send();
+            $this->respondNoContent(); // 204 No Content response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 }

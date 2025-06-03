@@ -1,4 +1,4 @@
-# README DTT BACK END ASSESSMENT #
+# README CATERING API #
 
 ## Local development environment setup
 1. Set up a local development environment (PHP, MySQL/MariaDB and a web server). The following suites have all requirements bundled: 

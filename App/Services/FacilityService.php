@@ -7,21 +7,25 @@ namespace App\Services;
 use App\Models\Facility;
 use App\Repositories\FacilityRepository;
 use App\Helpers\PaginationHelper;
+use App\Services\CustomDb as Db;
 
 class FacilityService implements IFacilityService
 {
     private $facilityRepository;
     private $locationService;
     private $tagService;
+    private $db;
 
     public function __construct(
         FacilityRepository $facilityRepository,
         ILocationService $locationService,
-        ITagService $tagService
+        ITagService $tagService,
+        Db $db
     ) {
         $this->facilityRepository = $facilityRepository;
         $this->locationService = $locationService;
         $this->tagService = $tagService;
+        $this->db = $db;
     }
 
     /**
@@ -99,7 +103,7 @@ class FacilityService implements IFacilityService
             $location = $this->locationService->getLocationById($facilityData['location_id']);
             $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
 
-            return new Facility(
+            return $this->createFacilityObject(
                 $facilityData['facility_id'],
                 $facilityData['facility_name'],
                 $location,
@@ -122,6 +126,8 @@ class FacilityService implements IFacilityService
     public function createFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array|string
     {
         try {
+            $this->db->beginTransaction();
+
             // Create the facility
             $createdFacilityId = $this->facilityRepository->createFacility([
                 ':name' => $facility->name,
@@ -136,20 +142,28 @@ class FacilityService implements IFacilityService
             // Handle tagNames (if provided, create new tags and associate them)
             if (!empty($tagNames)) {
                 foreach ($tagNames as $tagName) {
-                    // Tag nesnesi oluştur
                     $tag = new \App\Models\Tag(0, $tagName);
-                    $tagId = $this->tagService->createTag($tag)['tag']->id; // Yeni oluşturulan tag ID'sini al
+                    $tagId = $this->tagService->createTag($tag)['tag']->id;
                     $this->facilityRepository->addTagsToFacility($createdFacilityId, [$tagId]);
                 }
             }
-            // Retrieve the created facility object
-            $createdFacilityObject = $this->getFacilityById($createdFacilityId);
+            // Commit the transaction
+            $this->db->commit();
 
+            // Retrieve the created facility object
             return [
                 "message" => "Facility '{$facility->name}' successfully created.",
-                "facility" => $createdFacilityObject
+                "facility" => $this->createFacilityObject(
+                    $createdFacilityId,
+                    $facility->name,
+                    $facility->location,
+                    date('Y-m-d H:i:s'),
+                    $this->tagService->getTagsByFacilityId($createdFacilityId) ?? []
+                )
             ];
         } catch (\Exception $e) {
+            // Rollback the transaction in case of an error
+            $this->db->rollback();
             throw new \Exception("Failed to create facility: " . $e->getMessage());
         }
     }
@@ -165,16 +179,23 @@ class FacilityService implements IFacilityService
     public function updateFacility(Facility $facility, array $tagIds = [], array $tagNames = []): array
     {
         try {
+            // Begin transaction
+            $this->db->beginTransaction();
+
+            // Update the facility
             $fields = [
                 'name' => $facility->name,
                 'location_id' => $facility->location->id
             ];
-
             $this->facilityRepository->updateFacility($facility->id, $fields);
+
             // Handle tagIds
             if (!empty($tagIds)) {
                 $this->facilityRepository->addTagsToFacility($facility->id, $tagIds);
             }
+
+            // commit the transaction
+            $this->db->commit();
 
             $updatedFacilityObject = $this->getFacilityById($facility->id);
 
@@ -183,7 +204,9 @@ class FacilityService implements IFacilityService
                 "facility" => $updatedFacilityObject
             ];
         } catch (\Exception $e) {
-            throw new \Exception("Failed to create facility: " . $e->getMessage());
+            // Rollback the transaction in case of an error
+            $this->db->rollback();
+            throw new \Exception("Failed to update facility '{$facility->id}': " . $e->getMessage());
         }
     }
 
@@ -196,6 +219,9 @@ class FacilityService implements IFacilityService
     public function deleteFacility(Facility $facility): string
     {
         try {
+            // Begin transaction
+            $this->db->beginTransaction();
+
             $this->facilityRepository->deleteFacility($facility->id);
 
             return "Facility with ID {$facility->id} successfully deleted.";
@@ -235,5 +261,24 @@ class FacilityService implements IFacilityService
             'whereClause' => $whereClauseString,
             'bind' => $bind
         ];
+    }
+
+    /**
+     * Create a facility object.
+     * @param int $id
+     * @param string $name
+     * @param $location
+     * @param string $creationDate
+     * @param array $tags
+     * @return Facility
+     */
+    public function createFacilityObject(
+        int $id,
+        string $name,
+        $location,
+        string $creationDate,
+        array $tags = []
+    ): Facility {
+        return new Facility($id, $name, $location, $creationDate, $tags);
     }
 }

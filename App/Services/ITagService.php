@@ -62,4 +62,12 @@ interface ITagService
      * @return string
      */
     public function deleteTag(Tag $tag): string;
+
+       /**
+     * Create tag object
+     * @param int $id
+     * @param string $name
+     * @return Tag
+     */
+    public function createTagObject(int $id, string $name): Tag;
 }

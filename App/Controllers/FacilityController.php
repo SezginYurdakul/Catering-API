@@ -4,31 +4,27 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Models\Facility;
-use App\Plugins\Di\Factory;
-use App\Plugins\Http\Response\Ok;
-use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NoContent;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
 use App\Services\IFacilityService;
-use App\Middleware\AuthMiddleware;
 use App\Helpers\InputSanitizer;
+use App\Services\ILocationService;
+use App\Plugins\Di\Factory;
 
-class FacilityController
+
+class FacilityController extends RespondController
 {
     private IFacilityService $facilityService;
+    private ILocationService $locationService;
 
     /**
-     * Constructor to initialize the FacilityService from the DI container and the AuthMiddleware.
+     * Constructor to initialize the FacilityService and DI container
      */
     public function __construct()
     {
+       
         $this->facilityService = Factory::getDi()->getShared('facilityService');
-        $authMiddleware = new AuthMiddleware();
-        $authMiddleware->handle();
+        $this->locationService = Factory::getDi()->getShared('locationService');
     }
+
 
     /**
      * Get facilities with optional pagination, search, and filtering.
@@ -47,10 +43,9 @@ class FacilityController
 
             // Validate pagination parameters
             if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
                 ]);
-                $errorResponse->send();
                 return;
             }
 
@@ -64,10 +59,9 @@ class FacilityController
             foreach ($filters as $filter) {
                 $filter = trim($filter); // Remove whitespace
                 if (!in_array($filter, $validFilters)) {
-                    $errorResponse = new BadRequest([
+                    $this->respondBadRequest([
                         "error" => "Invalid filter provided: '$filter'. Valid filters are: " . implode(', ', $validFilters)
                     ]);
-                    $errorResponse->send();
                     return;
                 }
             }
@@ -75,8 +69,7 @@ class FacilityController
             // Sanitize and validate operator
             $operator = isset($_GET['operator']) ? strtoupper(trim($_GET['operator'])) : 'OR';
             if (!in_array($operator, ['AND', 'OR'])) {
-                $errorResponse = new BadRequest(["error" => "Invalid operator. Only 'AND' or 'OR' are allowed."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid operator. Only 'AND' or 'OR' are allowed."]);
                 return;
             }
 
@@ -87,25 +80,22 @@ class FacilityController
             $totalItems = $facilitiesData['pagination']['total_items'];
             $totalPages = (int) ceil($totalItems / $perPage);
             if ($totalPages > 0 && $page > $totalPages) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "The requested page ($page) exceeds the total number of pages ($totalPages)."
                 ]);
-                $errorResponse->send();
                 return;
             }
 
             // Send the response
-            $response = new Ok([
+            $this->respondOk([
                 'facilities' => $facilitiesData['facilities'],
                 'pagination' => $facilitiesData['pagination']
             ]); // 200 OK response
-            $response->send();
         } catch (\Exception $e) {
             // Handle exceptions and send a 500 Internal Server Error response
-            $errorResponse = new InternalServerError([
+            $this->respondInternalServerError([
                 "error" => $e->getMessage()
             ]); // 500 Internal Server Error
-            $errorResponse->send();
         }
     }
 
@@ -123,25 +113,21 @@ class FacilityController
         try {
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
                 return;
             }
             $facility = $this->facilityService->getFacilityById((int) $id);
 
             if (!$facility) {
-                $errorResponse = new NotFound(["error" => "Facility with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Facility with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new Ok([
+            $this->respondOk([
                 'facility' => $facility
             ]); // 200 OK response
-            $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -161,10 +147,9 @@ class FacilityController
 
             // Validate required fields
             if (empty($data['name']) || empty($data['location_id'])) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "The request body must include both 'name' and 'location_id' fields."
                 ]);
-                $errorResponse->send();
                 return;
             }
 
@@ -172,17 +157,14 @@ class FacilityController
             $name = InputSanitizer::sanitize(['value' => $data['name']])['value'];
             $locationId = InputSanitizer::sanitizeId($data['location_id']);
             if ($locationId === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
                 return;
             }
 
             // Validate location
-            $locationService = Factory::getDi()->getShared('locationService');
-            $location = $locationService->getLocationById($locationId);
+            $location = $this->locationService->getLocationById($locationId);
             if (!$location) {
-                $errorResponse = new BadRequest(["error" => "Invalid Location ID. Location not found."]); // 400 Bad Request
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid Location ID. Location not found."]); // 400 Bad Request
                 return;
             }
 
@@ -204,7 +186,7 @@ class FacilityController
             }
 
             // Create a new Facility object
-            $facility = new Facility(
+            $facility = $this->facilityService->createFacilityObject(
                 0,
                 $name,
                 $location,
@@ -213,30 +195,16 @@ class FacilityController
             );
 
             // Call the service method
-            if (!empty($tagIds) && empty($tagNames)) {
-                // Only tagIds are provided
-                $result = $this->facilityService->createFacility($facility, $tagIds, []);
-            } elseif (!empty($tagNames) && empty($tagIds)) {
-                // Only tagNames are provided
-                $result = $this->facilityService->createFacility($facility, [], $tagNames);
-            } elseif (empty($tagIds) && empty($tagNames)) {
-                // Neither tagIds nor tagNames are provided
-                $result = $this->facilityService->createFacility($facility);
-            } else {
-                // Both tagIds and tagNames are provided, which is not allowed
-                $errorResponse = new BadRequest([
-                    "error" => "You cannot provide both 'tagIds' and 'tagNames' at the same time."
-                ]);
-                $errorResponse->send();
-                return;
-            }
+            $result = $this->facilityService->createFacility($facility, $tagIds, $tagNames);
 
             // Send the response
-            $response = new Created($result); // 201 Created response
-            $response->send();
+            $this->respondCreated($result); // 201 Created response
+        } catch (\InvalidArgumentException $e) {
+            // Handle specific exceptions
+            $this->respondBadRequest(["error" => $e->getMessage()]); // 400 Bad Request
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(['error' => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            // Handle general exceptions
+            $this->respondInternalServerError(['error' => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 
@@ -256,8 +224,7 @@ class FacilityController
             // Sanitize and validate the ID
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
                 return;
             }
             // Decode the request body
@@ -265,10 +232,9 @@ class FacilityController
 
             // Check if at least one valid field is provided
             if (empty($data['name']) && empty($data['location_id']) && empty($data['tagIds']) && empty($data['tagNames'])) {
-                $errorResponse = new BadRequest([
+                $this->respondBadRequest([
                     "error" => "At least one valid field (facility name, location_id, tagIds, or tagNames) must be provided."
                 ]);
-                $errorResponse->send();
                 return;
             }
 
@@ -282,11 +248,9 @@ class FacilityController
             // Validate location if provided
             $location = $existingFacility->location;
             if ($locationId !== $existingFacility->location->id) {
-                $locationService = Factory::getDi()->getShared('locationService');
-                $location = $locationService->getLocationById($locationId);
+                $location = $this->locationService->getLocationById($locationId);
                 if (!$location) {
-                    $errorResponse = new BadRequest(["error" => "Invalid Location ID. Location not found."]);
-                    $errorResponse->send();
+                    $this->respondBadRequest(["error" => "Invalid Location ID. Location not found."]);
                     return;
                 }
             }
@@ -312,7 +276,7 @@ class FacilityController
             }
 
             // Create a Facility object
-            $facility = new Facility(
+            $facility = $this->facilityService->createFacilityObject(
                 $id,
                 $name,
                 $location,
@@ -330,11 +294,9 @@ class FacilityController
             }
 
             // Send the response
-            $response = new Ok(['result' => $result]); // 200 OK response
-            $response->send();
+            $this->respondOk(['result' => $result]); // 200 OK response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(['error' => $e->getMessage()]);
-            $errorResponse->send();
+            $this->respondInternalServerError(['error' => $e->getMessage()]);
         }
     }
 
@@ -352,8 +314,7 @@ class FacilityController
         try {
             $id = InputSanitizer::sanitizeId($id);
             if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
-                $errorResponse->send();
+                $this->respondBadRequest(["error" => "Invalid facility ID. It must be a positive integer."]);
                 return;
             }
 
@@ -362,16 +323,13 @@ class FacilityController
             $result = $this->facilityService->deleteFacility($existingFacility);
 
             if (!$result) {
-                $errorResponse = new NotFound(["error" => "Facility with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
+                $this->respondNotFound(["error" => "Facility with ID $id not found."]); // 404 Not Found
                 return;
             }
 
-            $response = new NoContent(); // 204 No Content response
-            $response->send();
+            $this->respondNoContent(); // 204 No Content response
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+            $this->respondInternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
         }
     }
 }

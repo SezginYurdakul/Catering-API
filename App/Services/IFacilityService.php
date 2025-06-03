@@ -63,4 +63,15 @@ interface IFacilityService
      */
     public function deleteFacility(Facility $facility): string;
 
+    /**
+     * Create facility object
+     * 
+     */
+    public function createFacilityObject(
+        int $id,
+        string $name,
+        $location,
+        string $creationDate,
+        array $tags = []
+    ): Facility;
 }
