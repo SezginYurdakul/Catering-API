@@ -1,0 +1,72 @@
+# Environment Configuration
+.env
+.env.local
+.env.production
+.env.testing
+
+# Dependencies
+vendor/
+node_modules/
+
+# Composer
+composer.phar
+composer.lock
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and Temporary Files
+*.log
+*.tmp
+*.temp
+logs/*.log
+storage/logs/*.log
+
+# Cache and Session Files
+cache/
+tmp/
+temp/
+sessions/
+
+# Build and Distribution
+dist/
+build/
+public/assets/compiled/
+
+# Database
+*.sql.gz
+*.sqlite
+*.db
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Testing
+.phpunit.result.cache
+coverage/
+.coverage
+phpunit.xml
+
+# Backup Files
+*.bak
+*.backup
+*.orig
+
+# PHP Specific
+.php_cs.cache
+.phpstan.neon.dist
+psalm.xml
