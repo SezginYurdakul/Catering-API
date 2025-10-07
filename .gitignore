@@ -59,7 +59,7 @@ docker-compose.override.yml
 .phpunit.result.cache
 coverage/
 .coverage
-phpunit.xml
+phpunit.xml.local
 
 # Backup Files
 *.bak
