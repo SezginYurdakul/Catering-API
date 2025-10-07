@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Services\CustomDb;
+use App\Helpers\Logger;
 use PDO;
 
 class FacilityRepository
 {
     private $db;
+    private ?Logger $logger;
 
-    public function __construct(CustomDb $db)
+    public function __construct(CustomDb $db, ?Logger $logger = null)
     {
         $this->db = $db;
+        $this->logger = $logger;
     }
 
     /**
@@ -53,6 +56,10 @@ class FacilityRepository
             $facilityData = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return $facilityData ?: [];
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('SELECT', 'getFacilities', $e->getMessage());
+            }
             throw new \Exception("Failed to fetch facilities: " . $e->getMessage());
         }
     }
@@ -84,6 +91,10 @@ class FacilityRepository
 
             return $facilityData ?: null;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('SELECT', 'getFacilityById', $e->getMessage());
+            }
             throw new \Exception("Failed to fetch facility with ID $id: " . $e->getMessage());
         }
     }
@@ -108,6 +119,10 @@ class FacilityRepository
 
             return $facilityId;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('INSERT', 'createFacility', $e->getMessage());
+            }
             throw new \Exception("Failed to create facility: " . $e->getMessage());
         }
     }
@@ -136,6 +151,10 @@ class FacilityRepository
 
             return $id;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('UPDATE', 'updateFacility', $e->getMessage());
+            }
             throw new \Exception("Failed to update facility with ID $id: " . $e->getMessage());
         }
     }
@@ -153,6 +172,10 @@ class FacilityRepository
             $query = "DELETE FROM Facilities WHERE id = :id";
             return $this->db->executeQuery($query, [':id' => $id]);
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('DELETE', 'deleteFacility', $e->getMessage());
+            }
             throw new \Exception("Failed to delete facility with ID $id: " . $e->getMessage());
         }
     }

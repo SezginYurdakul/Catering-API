@@ -7,16 +7,26 @@ namespace App\Middleware;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use App\Plugins\Http\Exceptions\Unauthorized;
+use App\Plugins\Di\Factory;
+use App\Helpers\Logger;
 
 class AuthMiddleware
 {
     private string $secretKey;
+    private ?Logger $logger;
 
     public function __construct()
     {
         // Load the secret key from the configuration
         $config = require __DIR__ . '/../../config/config.php';
         $this->secretKey = $config['jwt']['secret_key'];
+        
+        // Get logger from DI (optional, may not be available in tests)
+        try {
+            $this->logger = Factory::getDi()->getShared('logger');
+        } catch (\Exception $e) {
+            $this->logger = null;
+        }
     }
 
     /**
@@ -53,10 +63,28 @@ class AuthMiddleware
                 // Token is valid, proceed with the request
                 $_SESSION['user'] = $decoded->user; // Store user info in session or global variable
             } catch (\Exception $e) {
+                // Log authentication failure
+                if ($this->logger) {
+                    $this->logger->log('WARNING', 'JWT validation failed', [
+                        'error' => $e->getMessage(),
+                        'token_preview' => substr($jwt, 0, 20) . '...',
+                        'user_ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                        'endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+                    ]);
+                }
                 // Token is invalid or expired
                 throw new Unauthorized('Invalid or expired token');
             }
         } else {
+            // Log missing authorization header
+            if ($this->logger) {
+                $this->logger->log('WARNING', 'Missing or invalid Authorization header', [
+                    'header_present' => !empty($authHeader),
+                    'header_format' => $authHeader ? 'invalid' : 'missing',
+                    'user_ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                    'endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+                ]);
+            }
             // Authorization header is missing
             throw new Unauthorized('Authorization header not found');
         }

@@ -6,15 +6,18 @@ namespace App\Repositories;
 
 use App\Services\CustomDb;
 use App\Models\Location;
+use App\Helpers\Logger;
 use PDO;
 
 class LocationRepository
 {
     private $db;
+    private ?Logger $logger;
 
-    public function __construct(CustomDb $db)
+    public function __construct(CustomDb $db, ?Logger $logger = null)
     {
         $this->db = $db;
+        $this->logger = $logger;
     }
 
     /**
@@ -80,6 +83,10 @@ class LocationRepository
 
             return $locationId;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('INSERT', 'createLocation', $e->getMessage());
+            }
             throw new \Exception("Failed to create location: " . $e->getMessage());
         }
     }
@@ -111,6 +118,10 @@ class LocationRepository
 
             return $id;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('UPDATE', 'updateLocation', $e->getMessage());
+            }
             throw new \Exception("Failed to update location with ID $id: " . $e->getMessage());
         }
     }
@@ -127,6 +138,10 @@ class LocationRepository
             $query = "DELETE FROM Locations WHERE id = :id";
             return $this->db->executeQuery($query, [':id' => $id]);
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('DELETE', 'deleteLocation', $e->getMessage());
+            }
             throw new \Exception("Failed to delete location with ID $id: " . $e->getMessage());
         }
     }

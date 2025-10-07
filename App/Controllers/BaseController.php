@@ -9,15 +9,18 @@ use App\Plugins\Di\Factory;
 use App\Plugins\Http\Response\BadRequest;
 use App\Plugins\Http\Response\InternalServerError;
 use App\Helpers\InputSanitizer;
+use App\Helpers\Logger;
 use App\Middleware\AuthMiddleware;
 
 abstract class BaseController extends Injectable
 {
     protected $di;
+    protected Logger $logger;
 
     public function __construct()
     {
         $this->di = Factory::getDi();
+        $this->logger = $this->di->getShared('logger');
     }
 
     /**
@@ -63,6 +66,13 @@ abstract class BaseController extends Injectable
 
         // Validate pagination parameters
         if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
+            // Log invalid pagination attempt
+            $this->logger->log('WARNING', 'Invalid pagination parameters', [
+                'page' => $_GET['page'] ?? null,
+                'per_page' => $_GET['per_page'] ?? null,
+                'endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+            ]);
+
             $response = new BadRequest([
                 "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
             ]);
@@ -98,6 +108,13 @@ abstract class BaseController extends Injectable
     {
         $sanitizedId = InputSanitizer::sanitizeId($id);
         if ($sanitizedId === null) {
+            // Log validation error
+            $this->logger->log('WARNING', "Invalid {$fieldName} provided", [
+                'provided_value' => $id,
+                'field_name' => $fieldName,
+                'endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+            ]);
+
             $response = new BadRequest(["error" => "Invalid {$fieldName}. It must be a positive integer."]);
             $response->send();
             exit;
@@ -118,6 +135,12 @@ abstract class BaseController extends Injectable
         }
 
         if (!empty($missingFields)) {
+            // Log validation error
+            $this->logger->logValidationError(
+                ['missing_fields' => $missingFields],
+                $_SERVER['REQUEST_URI'] ?? 'unknown'
+            );
+
             $response = new BadRequest([
                 "error" => "Missing required fields: " . implode(', ', $missingFields)
             ]);
@@ -127,17 +150,47 @@ abstract class BaseController extends Injectable
     }
 
     /**
-     * Handle exceptions consistently
+     * Handle exceptions consistently with structured logging
      */
     protected function handleException(\Exception $e, string $context = ''): void
     {
-        error_log("Exception in {$context}: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+        // Structured logging with context
+        $this->logger->logException($e, [
+            'context' => $context,
+            'endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+            'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown',
+            'request_data' => $this->getRequestDataSafely()
+        ]);
 
+        // Send appropriate response based on environment
+        $isDevelopment = ($_ENV['APP_ENV'] ?? 'production') === 'development';
+        
         $response = new InternalServerError([
             'error' => 'An internal server error occurred',
-            'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : 'Internal error'
+            'message' => $isDevelopment ? $e->getMessage() : 'Internal error',
+            'context' => $isDevelopment ? $context : null
         ]);
         $response->send();
+    }
+
+    /**
+     * Get request data safely for logging (without sensitive info)
+     */
+    private function getRequestDataSafely(): array
+    {
+        $data = [
+            'query_params' => $_GET ?? [],
+            'post_params' => $_POST ?? []
+        ];
+
+        // Remove sensitive fields
+        $sensitiveFields = ['password', 'token', 'api_key', 'secret'];
+        foreach ($sensitiveFields as $field) {
+            unset($data['query_params'][$field]);
+            unset($data['post_params'][$field]);
+        }
+
+        return $data;
     }
 
     /**

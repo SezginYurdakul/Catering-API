@@ -5,12 +5,36 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Di\Factory;
 
 /**
  * Simple validator - all validation logic in one place
  */
 class Validator
 {
+    /**
+     * Get logger instance from DI
+     */
+    private static function getLogger(): ?Logger
+    {
+        try {
+            return Factory::getDi()->getShared('logger');
+        } catch (\Exception $e) {
+            return null; // Logger not available
+        }
+    }
+
+    /**
+     * Log validation error before throwing exception
+     */
+    private static function logValidationError(array $errors, string $context): void
+    {
+        $logger = self::getLogger();
+        if ($logger) {
+            $logger->logValidationError($errors, $context);
+        }
+    }
+
     /**
      * Validate required fields
      */
@@ -24,6 +48,7 @@ class Validator
         }
         
         if ($errors) {
+            self::logValidationError($errors, 'required_fields_validation');
             throw new ValidationException($errors);
         }
     }
@@ -34,7 +59,9 @@ class Validator
     public static function positiveInt($value, string $field): void
     {
         if (!is_numeric($value) || $value <= 0) {
-            throw new ValidationException([$field => ucfirst($field) . ' must be a positive integer']);
+            $errors = [$field => ucfirst($field) . ' must be a positive integer'];
+            self::logValidationError($errors, 'positive_int_validation');
+            throw new ValidationException($errors);
         }
     }
     
@@ -54,6 +81,7 @@ class Validator
         }
         
         if ($errors) {
+            self::logValidationError($errors, 'pagination_validation');
             throw new ValidationException($errors);
         }
     }
@@ -65,9 +93,11 @@ class Validator
     {
         $invalid = array_diff($values, $allowed);
         if ($invalid) {
-            throw new ValidationException([
+            $errors = [
                 $field => "Invalid $field: " . implode(', ', $invalid) . '. Allowed: ' . implode(', ', $allowed)
-            ]);
+            ];
+            self::logValidationError($errors, 'allowed_values_validation');
+            throw new ValidationException($errors);
         }
     }
     
@@ -78,9 +108,11 @@ class Validator
     {
         $len = strlen($value);
         if ($len < $min || $len > $max) {
-            throw new ValidationException([
+            $errors = [
                 $field => ucfirst($field) . " must be between $min and $max characters"
-            ]);
+            ];
+            self::logValidationError($errors, 'string_length_validation');
+            throw new ValidationException($errors);
         }
     }
     
@@ -90,7 +122,9 @@ class Validator
     public static function email(string $email, string $field = 'email'): void
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new ValidationException([$field => 'Invalid email format']);
+            $errors = [$field => 'Invalid email format'];
+            self::logValidationError($errors, 'email_validation');
+            throw new ValidationException($errors);
         }
     }
 }
