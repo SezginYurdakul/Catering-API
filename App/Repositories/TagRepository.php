@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Services\CustomDb;
+use App\Helpers\Logger;
 use PDO;
 
 class TagRepository
 {
     private $db;
+    private ?Logger $logger;
 
-    public function __construct(CustomDb $db)
+    public function __construct(CustomDb $db, ?Logger $logger = null)
     {
         $this->db = $db;
+        $this->logger = $logger;
     }
 
     /**
@@ -121,6 +124,10 @@ class TagRepository
 
             return $tagId;
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('INSERT', 'createTag', $e->getMessage());
+            }
             throw new \Exception("Failed to create tag: " . $e->getMessage());
         }
     }
@@ -142,6 +149,10 @@ class TagRepository
                 ':id' => $id
             ]);
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('UPDATE', 'updateTag', $e->getMessage());
+            }
             throw new \Exception("Failed to update tag with ID $id: " . $e->getMessage());
         }
     }
@@ -159,6 +170,10 @@ class TagRepository
             $query = "DELETE FROM Tags WHERE id = :id";
             return $this->db->executeQuery($query, [':id' => $id]);
         } catch (\Exception $e) {
+            // Log critical database error
+            if ($this->logger) {
+                $this->logger->logDatabaseError('DELETE', 'deleteTag', $e->getMessage());
+            }
             throw new \Exception("Failed to delete tag with ID $id: " . $e->getMessage());
         }
     }

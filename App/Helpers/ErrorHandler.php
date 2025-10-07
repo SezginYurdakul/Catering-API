@@ -13,10 +13,10 @@ use App\Plugins\Http\Response\InternalServerError;
 class ErrorHandler
 {
     /**
-     * Handle all exceptions
-     * @param \Exception $exception
+     * Handle all exceptions and errors
+     * @param \Throwable $exception
      */
-    public static function handle(\Exception $exception): void
+    public static function handle(\Throwable $exception): void
     {
         // Simple logging
         self::logError($exception);
@@ -56,10 +56,10 @@ class ErrorHandler
     }
     
     /**
-     * Simple error logging
-     * @param \Exception $exception
+     * Simple error logging with fallback
+     * @param \Throwable $exception
      */
-    private static function logError(\Exception $exception): void
+    private static function logError(\Throwable $exception): void
     {
         $logMessage = sprintf(
             "[%s] %s: %s in %s:%d",
@@ -70,20 +70,33 @@ class ErrorHandler
             $exception->getLine()
         );
         
+        // Primary: PHP error_log
         error_log($logMessage);
         
-        // Also log to API log file if logger service exists
+        // Secondary: Logger service (if available)
         try {
             if (class_exists('\App\Plugins\Di\Factory')) {
                 $logger = \App\Plugins\Di\Factory::getDi()->getShared('logger');
-                $logger->log('ERROR', $exception->getMessage(), [
-                    'exception' => get_class($exception),
-                    'file' => $exception->getFile(),
-                    'line' => $exception->getLine()
-                ]);
+                $logger->logException($exception);
             }
         } catch (\Exception $e) {
-            // Logger not available, continue
+            // Fallback: Direct file logging
+            try {
+                $fallbackLog = defined('BASE_PATH') 
+                    ? BASE_PATH . '/logs/error_fallback.log'
+                    : __DIR__ . '/../../logs/error_fallback.log';
+                    
+                $fallbackMessage = sprintf(
+                    "[%s] FALLBACK LOG - Logger service unavailable\n%s\nOriginal error: %s\n\n",
+                    date('Y-m-d H:i:s'),
+                    $logMessage,
+                    $e->getMessage()
+                );
+                
+                file_put_contents($fallbackLog, $fallbackMessage, FILE_APPEND);
+            } catch (\Exception $fileError) {
+                // Last resort: Just continue, error_log already called
+            }
         }
     }
     

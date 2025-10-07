@@ -16,8 +16,21 @@ class PaginationHelper
      */
     public static function paginate(int $totalItems, int $currentPage, int $perPage): array
     {
-        $totalPages = (int) ceil($totalItems / $perPage);
-        $currentPage = max(1, min($currentPage, $totalPages)); // Ensure current page is within bounds
+        // Critical: Prevent division by zero
+        if ($perPage <= 0) {
+            $perPage = 10; // Fallback to default
+        }
+
+        // Ensure non-negative total items
+        $totalItems = max(0, $totalItems);
+
+        // Calculate total pages
+        $totalPages = $totalItems > 0 ? (int) ceil($totalItems / $perPage) : 0;
+
+        // Ensure current page is within valid bounds
+        $currentPage = max(1, $totalPages > 0 ? min($currentPage, $totalPages) : 1);
+
+        // Calculate offset
         $offset = ($currentPage - 1) * $perPage;
 
         return [

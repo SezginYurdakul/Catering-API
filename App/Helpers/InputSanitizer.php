@@ -27,9 +27,10 @@ class InputSanitizer
         
         foreach ($data as $key => $value) {
             if (is_string($value)) {
-                // Remove unwanted special characters for general text fields
-                $value = htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
-                $value = preg_replace('/[^\w\s\-.,]/u', '', $value); // Allow letters, numbers, spaces, dashes, dots, and commas
+                // Sanitize by encoding HTML entities (prevents XSS)
+                // Preserves apostrophes, parentheses, and international characters
+                $value = trim($value);
+                $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
                 $data[$key] = $value;
             } elseif (is_int($value)) {
                 $data[$key] = self::sanitizeId($value);
@@ -110,16 +111,6 @@ class InputSanitizer
         return null;
     }
 
-    // Slug sanitization (for URLs, filenames, etc.)
-    public static function sanitizeSlug(string $value): string
-    {
-        $value = trim($value);
-        $value = strtolower($value);
-        $value = preg_replace('/[^a-z0-9\-]/', '-', $value);
-        $value = preg_replace('/-+/', '-', $value);
-        return trim($value, '-');
-    }
-
     // Text sanitization for rich content (allows more characters)
     public static function sanitizeText(string $value): string
     {
@@ -142,8 +133,28 @@ class InputSanitizer
     {
         $decoded = json_decode(trim($value), true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return self::sanitize($decoded);
+            // Use lighter sanitization for JSON to preserve structure
+            return self::sanitizeJsonArray($decoded);
         }
         return null;
+    }
+
+    /**
+     * Lighter sanitization for JSON arrays (only encodes HTML, doesn't strip characters)
+     * @param array $data
+     * @return array
+     */
+    private static function sanitizeJsonArray(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                // Only encode HTML entities, preserve all other characters
+                $data[$key] = htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
+            } elseif (is_array($value)) {
+                $data[$key] = self::sanitizeJsonArray($value);
+            }
+            // Other types (int, float, bool) pass through unchanged
+        }
+        return $data;
     }
 }

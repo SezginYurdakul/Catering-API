@@ -84,19 +84,22 @@ $di->setShared('db', function () use ($config) {
 
 $di->setShared('locationService', function () use ($di) {
     $db = $di->getShared('db');
-    $locationRepository = new LocationRepository($db);
+    $logger = $di->getShared('logger');
+    $locationRepository = new LocationRepository($db, $logger);
     return new \App\Services\LocationService($locationRepository);
 });
 
 $di->setShared('tagService', function () use ($di) {
     $db = $di->getShared('db');
-    $tagRepository = new TagRepository($db);
+    $logger = $di->getShared('logger');
+    $tagRepository = new TagRepository($db, $logger);
     return new \App\Services\TagService($tagRepository);
 });
 
 $di->setShared('facilityService', function () use ($di) {
     $db = $di->getShared('db');
-    $facilityRepository = new FacilityRepository($db);
+    $logger = $di->getShared('logger');
+    $facilityRepository = new FacilityRepository($db, $logger);
     $locationService = $di->getShared('locationService');
     $tagService = $di->getShared('tagService');
     return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService);
