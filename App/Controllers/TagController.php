@@ -230,7 +230,7 @@ class TagController extends BaseController
 
             $result = $this->tagService->deleteTag($tag);
 
-            $response = new NoContent(); // 204 No Content response
+            $response = new Ok(['message' => 'Tag deleted successfully']); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error

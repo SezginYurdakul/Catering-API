@@ -6,7 +6,7 @@ $di = Factory::getDi();
 $router = $di->getShared('router');
 
 // Set the base path for your project
-$router->setBasePath('/');
+$router->setBasePath('/facility_api');
 
 require_once '../routes/routes.php';
 
