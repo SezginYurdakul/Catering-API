@@ -58,19 +58,8 @@ class FacilityService implements IFacilityService
 
             $facilitiesData = $this->facilityRepository->getFacilities($whereClause, $bind, $perPage, $offset);
 
-            $facilities = [];
-            foreach ($facilitiesData as $facilityData) {
-                $location = $this->locationService->getLocationById($facilityData['location_id']);
-                $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
-
-                $facilities[] = new Facility(
-                    $facilityData['facility_id'],
-                    $facilityData['facility_name'],
-                    $location,
-                    $facilityData['creation_date'],
-                    $tags
-                );
-            }
+            // Transform raw data to Facility objects using reusable helper
+            $facilities = $this->mapToFacilityObjects($facilitiesData);
 
             // Use filtered count when filters are applied, otherwise use total count
             if (!empty($whereClause) && $whereClause !== '1') {
@@ -350,22 +339,9 @@ class FacilityService implements IFacilityService
     {
         try {
             $facilitiesData = $this->facilityRepository->getFacilitiesByLocation($locationId);
-            $facilities = [];
             
-            foreach ($facilitiesData as $facilityData) {
-                $location = $this->locationService->getLocationById($facilityData['location_id']);
-                $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
-
-                $facilities[] = new Facility(
-                    $facilityData['facility_id'],
-                    $facilityData['facility_name'],
-                    $location,
-                    $facilityData['creation_date'],
-                    $tags
-                );
-            }
-            
-            return $facilities;
+            // Transform raw data to Facility objects using reusable helper
+            return $this->mapToFacilityObjects($facilitiesData);
         } catch (\Exception $e) {
             throw new \Exception("Failed to get facilities by location: " . $e->getMessage());
         }
@@ -380,22 +356,9 @@ class FacilityService implements IFacilityService
     {
         try {
             $facilitiesData = $this->facilityRepository->getFacilitiesByTag($tagId);
-            $facilities = [];
             
-            foreach ($facilitiesData as $facilityData) {
-                $location = $this->locationService->getLocationById($facilityData['location_id']);
-                $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
-
-                $facilities[] = new Facility(
-                    $facilityData['facility_id'],
-                    $facilityData['facility_name'],
-                    $location,
-                    $facilityData['creation_date'],
-                    $tags
-                );
-            }
-            
-            return $facilities;
+            // Transform raw data to Facility objects using reusable helper
+            return $this->mapToFacilityObjects($facilitiesData);
         } catch (\Exception $e) {
             throw new \Exception("Failed to get facilities by tag: " . $e->getMessage());
         }
@@ -462,5 +425,31 @@ class FacilityService implements IFacilityService
         } catch (\Exception $e) {
             throw new \Exception("Failed to get filtered facilities count: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Transform raw facility data array into Facility model objects.
+     * Eliminates duplicate code (DRY principle) by centralizing the mapping logic.
+     * @param array $facilitiesData Raw facility data from repository
+     * @return array Array of Facility model objects
+     */
+    private function mapToFacilityObjects(array $facilitiesData): array
+    {
+        $facilities = [];
+        
+        foreach ($facilitiesData as $facilityData) {
+            $location = $this->locationService->getLocationById($facilityData['location_id']);
+            $tags = $this->tagService->getTagsByFacilityId($facilityData['facility_id']) ?? [];
+
+            $facilities[] = new Facility(
+                $facilityData['facility_id'],
+                $facilityData['facility_name'],
+                $location,
+                $facilityData['creation_date'],
+                $tags
+            );
+        }
+        
+        return $facilities;
     }
 }
