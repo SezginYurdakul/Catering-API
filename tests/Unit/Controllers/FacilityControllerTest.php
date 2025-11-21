@@ -86,8 +86,7 @@ class FacilityControllerTest extends TestCase
             'page' => '1',
             'per_page' => '5',
             'facility_name' => 'Conference',
-            'city' => 'Amsterdam',
-            'operator' => 'AND'
+            'city' => 'Amsterdam'
         ];
 
         $mockResponse = [
