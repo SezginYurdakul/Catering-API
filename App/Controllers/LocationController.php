@@ -267,12 +267,12 @@ class LocationController extends BaseController
             $result = $this->locationService->deleteLocation($id);
 
             if (!$result) {
-                $errorResponse = new NotFound(["eror" => "Location with ID $id not found."]); // 404 Not Found
+                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
                 $errorResponse->send();
                 return;
             }
 
-            $response = new NoContent(); // 204 No Content response
+            $response = new Ok(['message' => 'Location deleted successfully']); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
             $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error

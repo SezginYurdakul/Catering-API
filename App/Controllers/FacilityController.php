@@ -176,6 +176,10 @@ class FacilityController extends BaseController
             $response = new Created($result);
             $response->send();
         } catch (\Exception $e) {
+            // Check if it's a "not found" type error
+            if (strpos($e->getMessage(), 'does not exist') !== false) {
+                throw new NotFound($e->getMessage());
+            }
             throw new InternalServerError($e->getMessage());
         }
     }
@@ -253,6 +257,10 @@ class FacilityController extends BaseController
             $response = new Ok($result);
             $response->send();
         } catch (\Exception $e) {
+            // Check if it's a "not found" type error
+            if (strpos($e->getMessage(), 'does not exist') !== false) {
+                throw new NotFound('', 'Facility', (string) $id);
+            }
             throw new InternalServerError($e->getMessage());
         }
     }
@@ -285,9 +293,13 @@ class FacilityController extends BaseController
                 throw new InternalServerError('Failed to delete facility');
             }
 
-            $response = new NoContent();
+            $response = new Ok(['message' => 'Facility deleted successfully']);
             $response->send();
         } catch (\Exception $e) {
+            // Check if it's a "not found" type error
+            if (strpos($e->getMessage(), 'does not exist') !== false) {
+                throw new NotFound('', 'Facility', (string) $id);
+            }
             throw new InternalServerError($e->getMessage());
         }
     }
