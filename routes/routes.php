@@ -47,3 +47,6 @@ $router->post('/auth/login', 'App\Controllers\AuthController@login');
 
 // Health check route
 $router->get('/health', IndexController::class . '@test');
+
+// Root route
+$router->get('/', IndexController::class . '@index');
