@@ -1898,7 +1898,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8080/web_backend_test_catering_api"
+			"value": "http://localhost:8080/facility_api"
 		},
 		{
 			"key": "page",
