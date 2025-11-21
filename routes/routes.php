@@ -23,6 +23,7 @@ $router->get('/facilities',          FacilityController::class . '@getFacilities
 $router->get('/facilities/(\d+)',    FacilityController::class . '@getFacilityById');
 $router->post('/facilities',         FacilityController::class . '@createFacility');
 $router->patch('/facilities/(\d+)',  FacilityController::class . '@updateFacility');
+$router->put('/facilities/(\d+)',    FacilityController::class . '@updateFacility');
 $router->delete('/facilities/(\d+)', FacilityController::class . '@deleteFacility');
 
 // Location routes
@@ -30,6 +31,7 @@ $router->get('/locations',           LocationController::class . '@getAllLocatio
 $router->get('/locations/(\d+)',     LocationController::class . '@getLocationById');
 $router->post('/locations',          LocationController::class . '@createLocation');
 $router->patch('/locations/(\d+)',   LocationController::class . '@updateLocation');
+$router->put('/locations/(\d+)',     LocationController::class . '@updateLocation');
 $router->delete('/locations/(\d+)',  LocationController::class . '@deleteLocation');
 
 // Tag routes
@@ -37,6 +39,7 @@ $router->get('/tags',                TagController::class . '@getAllTags');
 $router->get('/tags/(\d+)',          TagController::class . '@getTagById');
 $router->post('/tags',               TagController::class . '@createTag');
 $router->patch('/tags/(\d+)',        TagController::class . '@updateTag');
+$router->put('/tags/(\d+)',          TagController::class . '@updateTag');
 $router->delete('/tags/(\d+)',       TagController::class . '@deleteTag');
 
 // Auth routes
