@@ -62,7 +62,10 @@ class FacilityController extends BaseController
             }
 
             // Sanitize and validate operator
-            $operator = isset($_GET['operator']) ? strtoupper(trim($_GET['operator'])) : 'OR';
+            // Default: AND - all specified filters must match (more precise)
+            // Optional: User can specify operator=OR for broader search results
+            // Note: Operator kept for future flexibility, can be removed if OR is never needed
+            $operator = isset($_GET['operator']) ? strtoupper(trim($_GET['operator'])) : 'AND';
             if (!in_array($operator, ['AND', 'OR'])) {
                 throw new ValidationException(['operator' => "Invalid operator. Only 'AND' or 'OR' are allowed."]);
             }
