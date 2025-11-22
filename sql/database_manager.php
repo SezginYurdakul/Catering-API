@@ -248,12 +248,31 @@ function executeSQLScript(CustomDb $db, string $sql): void {
         } catch (Exception $e) {
             echo "  ERROR: Failed statement: " . substr($statement, 0, 100) . "...\n";
             echo "  ERROR: " . $e->getMessage() . "\n";
-            
-            // Skip "table already exists" and similar non-critical errors
-            if (strpos($e->getMessage(), 'already exists') === false && 
-                strpos($e->getMessage(), "doesn't exist") === false) {
-                throw new Exception("Failed to execute: " . substr($statement, 0, 100) . "... Error: " . $e->getMessage());
+
+            // Treat a few known non-fatal errors as warnings and continue seeding.
+            // This helps the setup flow complete when seed files are not fully idempotent
+            // (for example, duplicate rows or minor pre-existence issues).
+            $msg = $e->getMessage();
+            $isNonFatal = false;
+
+            // Common non-fatal MySQL messages we can ignore during seeding
+            if (strpos($msg, 'already exists') !== false) {
+                $isNonFatal = true;
             }
+            if (strpos($msg, "doesn't exist") !== false) {
+                $isNonFatal = true;
+            }
+            if (strpos($msg, 'Duplicate entry') !== false) {
+                // Duplicate primary/unique key when inserting seed rows - skip
+                $isNonFatal = true;
+            }
+
+            if ($isNonFatal) {
+                echo "  ⚠️ Non-fatal error during seed; continuing.\n";
+                continue;
+            }
+
+            throw new Exception("Failed to execute: " . substr($statement, 0, 100) . "... Error: " . $e->getMessage());
         }
     }
 }
@@ -267,7 +286,7 @@ function showDatabaseStatus(CustomDb $db): void {
     echo "│ Table               │ Count   │\n";
     echo "├─────────────────────┼─────────┤\n";
     
-    $tables = ['Facilities', 'Locations', 'Tags', 'Facility_Tags'];
+    $tables = ['Facilities', 'Locations', 'Tags', 'Facility_Tags', 'Employees', 'Employee_Facility'];
     
     foreach ($tables as $table) {
         $result = $db->executeSelectQuery("SELECT COUNT(*) as count FROM $table");
