@@ -120,7 +120,6 @@ class TagController extends BaseController
     public function createTag(): void
     {
         try {
-
             $tagData = json_decode(file_get_contents('php://input'), true);
 
             // Sanitize client data
@@ -145,7 +144,14 @@ class TagController extends BaseController
             $response = new Created($result); // 201 Created response
             $response->send();
         } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
+            $msg = $e->getMessage();
+            if ($msg === 'A tag with this name already exists.' || (strpos($msg, 'Tag name') !== false && strpos($msg, 'already exists') !== false)) {
+                // 400 Bad Request for duplicate tag name
+                $errorResponse = new BadRequest(["error" => $msg]);
+                $errorResponse->send();
+                return;
+            }
+            $errorResponse = new InternalServerError(["error" => $msg . "No change was made"]); // 500 Internal Server Error
             $errorResponse->send();
         }
     }
@@ -194,6 +200,13 @@ class TagController extends BaseController
             $response = new Ok($result); // 200 OK response
             $response->send();
         } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            if ($msg === 'A tag with this name already exists.' || (strpos($msg, 'Tag name') !== false && strpos($msg, 'already exists') !== false)) {
+                // 400 Bad Request for duplicate tag name
+                $errorResponse = new BadRequest(["error" => $msg]);
+                $errorResponse->send();
+                return;
+            }
             $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
             $errorResponse->send();
         }
