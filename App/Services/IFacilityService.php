@@ -30,7 +30,17 @@ interface IFacilityService
      * Get all facilities.
      * Returns all facilities as paginated result with optional filtering by name, tag, or location.
      */
-    public function getFacilities(int $page = 1, int $perPage = 10, ?string $name = null, ?string $tag = null, ?string $city = null, ?string $country = null, string $operator = 'AND'): array;
+    public function getFacilities(
+        int $page = 1,
+        int $perPage = 10,
+        ?string $name = null,
+        ?string $tag = null,
+        ?string $city = null,
+        ?string $country = null,
+        string $operator = 'AND',
+        array $filters = [],
+        ?string $query = null
+    ): array;
 
     /**
      * Get a facility by its ID.

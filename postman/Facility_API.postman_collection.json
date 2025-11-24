@@ -1,1912 +1,2613 @@
 {
-  "info": {
-    "_postman_id": "f0d40563-5130-4491-b0b8-5ddf6ada84a9",
-    "name": "Catering_API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "22299640",
-    "_collection_link": "https://solar-resonance-278359.postman.co/workspace/Team-Workspace~1a2d800b-458f-49ba-8fa2-db0eb7f4301e/collection/22299640-f0d40563-5130-4491-b0b8-5ddf6ada84a9?action=share&source=collection_link&creator=22299640"
-  },
-  "item": [
-    {
-      "name": "Facility",
-      "item": [
-        {
-          "name": "Create a facility",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Amsterdam Grand Catering\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/facilities",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Create facility with proper request body",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility without tagIds",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with tagIds",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with not existing tagNames",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagNames\": [\"Test Tag 1\"]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with existing tagIds",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [\"1,3\"]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility without facility name",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility without location_id",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with not existing tag id",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\" : 1,\n    \"tagIds\": [999]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with not existing location_id",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\" : 999,\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create facility with incorrect formatted request body",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"namexx\": \"Test Facility\",\n    \"location_idww\": 1,\n    \"tagIds\": [1,2,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Get all facilities",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/facilities",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get all facility with tag and location details",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/facilities",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Date",
-                  "value": "Fri, 11 Apr 2025 16:40:30 GMT"
-                },
-                {
-                  "key": "Server",
-                  "value": "Apache/2.4.62 (Debian)"
-                },
-                {
-                  "key": "X-Powered-By",
-                  "value": "PHP/8.3.19"
-                },
-                {
-                  "key": "Content-Length",
-                  "value": "7449"
-                },
-                {
-                  "key": "Keep-Alive",
-                  "value": "timeout=5, max=100"
-                },
-                {
-                  "key": "Connection",
-                  "value": "Keep-Alive"
-                },
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n    \"facilities\": [\n        {\n            \"id\": 1,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                },\n                {\n                    \"id\": 8,\n                    \"name\": \"ama\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Rotterdam Event Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 2,\n                \"city\": \"Rotterdam\",\n                \"address\": \"Coolsingel 10\",\n                \"zip_code\": \"3012AD\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-10-7654321\"\n            }\n        },\n        {\n            \"id\": 3,\n            \"name\": \"The Hague Banquet Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 3,\n                \"city\": \"The Hague\",\n                \"address\": \"Lange Voorhout 15\",\n                \"zip_code\": \"2514EE\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-70-9876543\"\n            }\n        },\n        {\n            \"id\": 4,\n            \"name\": \"Utrecht Party Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 4,\n                \"city\": \"Utrecht\",\n                \"address\": \"Domplein 4\",\n                \"zip_code\": \"3512JC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-30-4567890\"\n            }\n        },\n        {\n            \"id\": 5,\n            \"name\": \"Eindhoven Outdoor Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 5,\n                \"city\": \"Eindhoven\",\n                \"address\": \"Strijp-S 20\",\n                \"zip_code\": \"5617AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-40-1239876\"\n            }\n        },\n        {\n            \"id\": 6,\n            \"name\": \"Groningen Conference Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 6,\n                \"city\": \"Groningen\",\n                \"address\": \"Grote Markt 5\",\n                \"zip_code\": \"9712CP\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-50-6543210\"\n            }\n        },\n        {\n            \"id\": 7,\n            \"name\": \"Maastricht Wedding Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 7,\n                \"city\": \"Maastricht\",\n                \"address\": \"Vrijthof 7\",\n                \"zip_code\": \"6211LE\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-43-7890123\"\n            }\n        },\n        {\n            \"id\": 8,\n            \"name\": \"Leiden Private Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 8,\n                \"city\": \"Leiden\",\n                \"address\": \"Breestraat 50\",\n                \"zip_code\": \"2311CS\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-71-2345678\"\n            }\n        },\n        {\n            \"id\": 9,\n            \"name\": \"Delft Cultural Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 9,\n                \"city\": \"Delft\",\n                \"address\": \"Markt 80\",\n                \"zip_code\": \"2611GW\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-15-3456789\"\n            }\n        },\n        {\n            \"id\": 10,\n            \"name\": \"Haarlem Exclusive Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 10,\n                \"city\": \"Haarlem\",\n                \"address\": \"Grote Houtstraat 100\",\n                \"zip_code\": \"2011SN\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-23-5678901\"\n            }\n        },\n        {\n            \"id\": 11,\n            \"name\": \"Zwolle Business Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                }\n            ],\n            \"location\": {\n                \"id\": 11,\n                \"city\": \"Zwolle\",\n                \"address\": \"Melkmarkt 12\",\n                \"zip_code\": \"8011MC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-38-1234567\"\n            }\n        },\n        {\n            \"id\": 12,\n            \"name\": \"Arnhem Outdoor Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 12,\n                \"city\": \"Arnhem\",\n                \"address\": \"Korenmarkt 8\",\n                \"zip_code\": \"6811GV\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-26-7654321\"\n            }\n        },\n        {\n            \"id\": 13,\n            \"name\": \"Breda Conference Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 13,\n                \"city\": \"Breda\",\n                \"address\": \"Grote Markt 20\",\n                \"zip_code\": \"4811XR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-76-9876543\"\n            }\n        },\n        {\n            \"id\": 14,\n            \"name\": \"Tilburg Wedding Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 14,\n                \"city\": \"Tilburg\",\n                \"address\": \"Heuvelstraat 15\",\n                \"zip_code\": \"5038AA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-13-4567890\"\n            }\n        },\n        {\n            \"id\": 15,\n            \"name\": \"Almere Private Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 15,\n                \"city\": \"Almere\",\n                \"address\": \"Stadhuisplein 1\",\n                \"zip_code\": \"1315HR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-36-1239876\"\n            }\n        },\n        {\n            \"id\": 16,\n            \"name\": \"Nijmegen Banquet Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 16,\n                \"city\": \"Nijmegen\",\n                \"address\": \"Grote Markt 10\",\n                \"zip_code\": \"6511KH\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-24-6543210\"\n            }\n        },\n        {\n            \"id\": 17,\n            \"name\": \"Apeldoorn Cultural Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 17,\n                \"city\": \"Apeldoorn\",\n                \"address\": \"Hoofdstraat 5\",\n                \"zip_code\": \"7311KA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-55-7890123\"\n            }\n        },\n        {\n            \"id\": 18,\n            \"name\": \"Amersfoort Exclusive Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 18,\n                \"city\": \"Amersfoort\",\n                \"address\": \"Lieve Vrouweplein 3\",\n                \"zip_code\": \"3811BR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-33-2345678\"\n            }\n        },\n        {\n            \"id\": 19,\n            \"name\": \"Den Bosch Party Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 19,\n                \"city\": \"Den Bosch\",\n                \"address\": \"Markt 25\",\n                \"zip_code\": \"5211JW\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-73-3456789\"\n            }\n        },\n        {\n            \"id\": 20,\n            \"name\": \"Haarlemmermeer Event Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                }\n            ],\n            \"location\": {\n                \"id\": 20,\n                \"city\": \"Haarlemmermeer\",\n                \"address\": \"Raadhuisplein 1\",\n                \"zip_code\": \"2132TZ\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-23-5678901\"\n            }\n        },\n        {\n            \"id\": 21,\n            \"name\": \"Zoetermeer Grand Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 21,\n                \"city\": \"Zoetermeer\",\n                \"address\": \"Stadhuisplein 10\",\n                \"zip_code\": \"2711EC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-79-1234567\"\n            }\n        },\n        {\n            \"id\": 22,\n            \"name\": \"Leeuwarden Outdoor Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 22,\n                \"city\": \"Leeuwarden\",\n                \"address\": \"Zaailand 15\",\n                \"zip_code\": \"8911BL\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-58-7654321\"\n            }\n        },\n        {\n            \"id\": 23,\n            \"name\": \"Deventer Conference Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 23,\n                \"city\": \"Deventer\",\n                \"address\": \"Brink 8\",\n                \"zip_code\": \"7411BR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-57-9876543\"\n            }\n        },\n        {\n            \"id\": 24,\n            \"name\": \"Enschede Private Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 24,\n                \"city\": \"Enschede\",\n                \"address\": \"Oude Markt 20\",\n                \"zip_code\": \"7511GA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-53-4567890\"\n            }\n        },\n        {\n            \"id\": 25,\n            \"name\": \"Hengelo Exclusive Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 25,\n                \"city\": \"Hengelo\",\n                \"address\": \"Burgemeester Jansenplein 5\",\n                \"zip_code\": \"7551ED\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-74-1239876\"\n            }\n        },\n        {\n            \"id\": 39,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-10 22:26:57\",\n            \"tagIds\": [],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 43,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-11 16:36:39\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 44,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-11 16:37:36\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        }\n    ],\n    \"pagination\": {\n        \"total_items\": 28,\n        \"current_page\": 1,\n        \"per_page\": 28,\n        \"total_pages\": 1,\n        \"offset\": 0\n    }\n}"
-            },
-            {
-              "name": "Get facilities with page=1 per_page=5",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/facilities/?page=1&per_page=5",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    ""
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "5"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Get facilities with higher page number than total page number",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/facilities/?page=20&per_page=10",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    ""
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "20"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "10"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": ""
-            }
-          ]
-        },
-        {
-          "name": "Get a spesific facility record",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/facilities/2",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "2"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get a facility with existing record",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/facilities/2",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "2"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Get a facility with not existing record",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/facilities/99",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "99"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Update a facility record",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n\"name\":\"Facility Test\",\n\"location_id\":1,\n\"tagIds\":[1,7,3]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/facilities/1",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "1"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Update an existing facility record with proper request body",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n\"name\": \"Test Facility\",\n\"location_id\": 1,\n\"tagIds\":[1,7,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities/35",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "35"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Update not existing facility record with tagIds",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n        \"tagIds\":[1,7,3]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities/999",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "999"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Update not existing facility record with tagNames (Create new tags)",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n        \"name\": \"Test Facility\",\n        \"location_id\":5,\n        \"tagNames\":[\"Test tag12\",\"Test tag234\"]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/facilities/999",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "999"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Delete a facility record",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/facilities/41",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "41"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Delete an existing facility",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/facilities/32",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "32"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Delete not existing facility",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/facilities/999",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities",
-                    "999"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Search in Facility records",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/facilities/search?query=Hallccccc",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "search"
-              ],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "Hallccccc"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "facility_search_without_filter",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/facilities?query=Wedding",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ],
-                  "query": [
-                    {
-                      "key": "query",
-                      "value": "Wedding"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Search facility with query and one filter parameter",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/facilities?query=Rotterdam&filter=city",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ],
-                  "query": [
-                    {
-                      "key": "query",
-                      "value": "Rotterdam"
-                    },
-                    {
-                      "key": "filter",
-                      "value": "city"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "search facility with more thane one parameter",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/facilities?facility_name=example&city_query=Amsterdam",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "facilities"
-                  ],
-                  "query": [
-                    {
-                      "key": "facility_name",
-                      "value": "example"
-                    },
-                    {
-                      "key": "city_query",
-                      "value": "Amsterdam"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Tag",
-      "item": [
-        {
-          "name": "Get all tags",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/tags",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get all tags",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/tags",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Get all tags with pagination parameters",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/tags/?page=1&per_page=2",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    ""
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "2"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Get tags with pagination",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/tags?page=1&per_page=3",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "per_page",
-                  "value": "3"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get tags with pagination",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/tags?page=1&per_page=3",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "3"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Get tags with  higher page number than total page number",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/tags?page=10&per_page=3",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "10"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "3"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Create a tag",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Test tag456\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/tags",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Create a tag with proper request body",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test Tag\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/tags",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create a tag with empty request body",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/tags",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create a tag with existing tag name",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Birthday Party\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/tags",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Get a spesific tag record",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/tags/1",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags",
-                "1"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get a spesific tag record",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/tags/1",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    "1"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Update a tag",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Wedding3\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/tags/3",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags",
-                "3"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Update a tag with proper body request",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Wedding1\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/tags/3",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    "3"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Update a tag with not proper body request",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"namexxx\": \"Wedding1\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/tags/3",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    "3"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Delete a tag",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/tags/999",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tags",
-                "999"
-              ],
-              "query": [
-                {
-                  "key": "",
-                  "value": null,
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Delete a tag with existing tagId",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tags/9",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    "9"
-                  ],
-                  "query": [
-                    {
-                      "key": "",
-                      "value": null,
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Delete a tag with not existing tagId",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tags/99",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tags",
-                    "99"
-                  ],
-                  "query": [
-                    {
-                      "key": "",
-                      "value": null,
-                      "disabled": true
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Location",
-      "item": [
-        {
-          "name": "Get all locations",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/locations",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get all locations",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/locations",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Get location with pagination",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/locations?page=1&per_page=3",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "per_page",
-                  "value": "3"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get location with pagination",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/locations?page=1&per_page=3",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "per_page",
-                      "value": "3"
-                    }
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Get a spesific location",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/locations/1",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations",
-                "1"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Get a spesific location",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/locations/1",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations",
-                    "1"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Get a spesific location with not existing id",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/locations/99",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations",
-                    "99"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Update a locoation",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"zip_code\": \"1012ABXX\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/locations/1",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations",
-                "1"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Update location with all fields",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n        \"city\": \"Amsterdam\",\n        \"address\": \"Damrak 1\",\n        \"zip_code\": \"1012ABXX\",\n        \"country_code\": \"NL\",\n        \"phone_number\": \"+31-20-1234567\"\n    }",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/locations/1",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations",
-                    "1"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Update location with one field",
-              "originalRequest": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"zip_code\": \"1012ABXX\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/locations/1",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations",
-                    "1"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Create a location",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"city\": \"Test\",\n    \"address\": \"Test 1\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/locations",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Create a location with proper request body",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"city\": \"Test\",\n    \"address\": \"Test 1\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/locations",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            },
-            {
-              "name": "Create a location with missing fields",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"city\": \"Test\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/locations",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        },
-        {
-          "name": "Delete a location",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/locations/31",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "locations",
-                "31"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Delete a location",
-              "originalRequest": {
-                "method": "DELETE",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/locations/31",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "locations",
-                    "31"
-                  ]
-                }
-              },
-              "_postman_previewlanguage": null,
-              "header": null,
-              "cookie": [],
-              "body": null
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "auth/login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0IiwiaWF0IjoxNzYzNjQ1NTk5LCJleHAiOjE3NjQwMDU1OTksInVzZXIiOiJhZG1pbiJ9.qf33uDhoU5etoH49WWvyNevnlk18tHWR3_rTDxdtDMI",
-        "type": "string"
-      }
-    ]
-  },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    }
-  ],
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "https://sezginyurdakul.com/catering_api"
-    },
-    {
-      "key": "page",
-      "value": "1"
-    },
-    {
-      "key": "per_page",
-      "value": "5"
-    }
-  ]
+	"info": {
+		"_postman_id": "f0d40563-5130-4491-b0b8-5ddf6ada84a9",
+		"name": "Facility_API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22299640",
+		"_collection_link": "https://solar-resonance-278359.postman.co/workspace/Team-Workspace~1a2d800b-458f-49ba-8fa2-db0eb7f4301e/collection/22299640-f0d40563-5130-4491-b0b8-5ddf6ada84a9?action=share&source=collection_link&creator=22299640"
+	},
+	"item": [
+		{
+			"name": "Facility",
+			"item": [
+				{
+					"name": "Create a facility",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Amsterdam Grand Catering\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/facilities",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create facility with proper request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility without tagIds",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with tagIds",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with not existing tagNames",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagNames\": [\"Test Tag 1\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with existing tagIds",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\": 1,\n    \"tagIds\": [\"1,3\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility without facility name",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility without location_id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with not existing tag id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\" : 1,\n    \"tagIds\": [999]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with not existing location_id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Facility\",\n    \"location_id\" : 999,\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create facility with incorrect formatted request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"namexx\": \"Test Facility\",\n    \"location_idww\": 1,\n    \"tagIds\": [1,2,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get all facilities",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/facilities",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get all facility with tag and location details",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/facilities",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 11 Apr 2025 16:40:30 GMT"
+								},
+								{
+									"key": "Server",
+									"value": "Apache/2.4.62 (Debian)"
+								},
+								{
+									"key": "X-Powered-By",
+									"value": "PHP/8.3.19"
+								},
+								{
+									"key": "Content-Length",
+									"value": "7449"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5, max=100"
+								},
+								{
+									"key": "Connection",
+									"value": "Keep-Alive"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"facilities\": [\n        {\n            \"id\": 1,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                },\n                {\n                    \"id\": 8,\n                    \"name\": \"ama\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Rotterdam Event Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 2,\n                \"city\": \"Rotterdam\",\n                \"address\": \"Coolsingel 10\",\n                \"zip_code\": \"3012AD\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-10-7654321\"\n            }\n        },\n        {\n            \"id\": 3,\n            \"name\": \"The Hague Banquet Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 3,\n                \"city\": \"The Hague\",\n                \"address\": \"Lange Voorhout 15\",\n                \"zip_code\": \"2514EE\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-70-9876543\"\n            }\n        },\n        {\n            \"id\": 4,\n            \"name\": \"Utrecht Party Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 4,\n                \"city\": \"Utrecht\",\n                \"address\": \"Domplein 4\",\n                \"zip_code\": \"3512JC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-30-4567890\"\n            }\n        },\n        {\n            \"id\": 5,\n            \"name\": \"Eindhoven Outdoor Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 5,\n                \"city\": \"Eindhoven\",\n                \"address\": \"Strijp-S 20\",\n                \"zip_code\": \"5617AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-40-1239876\"\n            }\n        },\n        {\n            \"id\": 6,\n            \"name\": \"Groningen Conference Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 6,\n                \"city\": \"Groningen\",\n                \"address\": \"Grote Markt 5\",\n                \"zip_code\": \"9712CP\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-50-6543210\"\n            }\n        },\n        {\n            \"id\": 7,\n            \"name\": \"Maastricht Wedding Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 7,\n                \"city\": \"Maastricht\",\n                \"address\": \"Vrijthof 7\",\n                \"zip_code\": \"6211LE\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-43-7890123\"\n            }\n        },\n        {\n            \"id\": 8,\n            \"name\": \"Leiden Private Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 8,\n                \"city\": \"Leiden\",\n                \"address\": \"Breestraat 50\",\n                \"zip_code\": \"2311CS\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-71-2345678\"\n            }\n        },\n        {\n            \"id\": 9,\n            \"name\": \"Delft Cultural Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 9,\n                \"city\": \"Delft\",\n                \"address\": \"Markt 80\",\n                \"zip_code\": \"2611GW\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-15-3456789\"\n            }\n        },\n        {\n            \"id\": 10,\n            \"name\": \"Haarlem Exclusive Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 10,\n                \"city\": \"Haarlem\",\n                \"address\": \"Grote Houtstraat 100\",\n                \"zip_code\": \"2011SN\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-23-5678901\"\n            }\n        },\n        {\n            \"id\": 11,\n            \"name\": \"Zwolle Business Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                }\n            ],\n            \"location\": {\n                \"id\": 11,\n                \"city\": \"Zwolle\",\n                \"address\": \"Melkmarkt 12\",\n                \"zip_code\": \"8011MC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-38-1234567\"\n            }\n        },\n        {\n            \"id\": 12,\n            \"name\": \"Arnhem Outdoor Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 12,\n                \"city\": \"Arnhem\",\n                \"address\": \"Korenmarkt 8\",\n                \"zip_code\": \"6811GV\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-26-7654321\"\n            }\n        },\n        {\n            \"id\": 13,\n            \"name\": \"Breda Conference Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 13,\n                \"city\": \"Breda\",\n                \"address\": \"Grote Markt 20\",\n                \"zip_code\": \"4811XR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-76-9876543\"\n            }\n        },\n        {\n            \"id\": 14,\n            \"name\": \"Tilburg Wedding Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 14,\n                \"city\": \"Tilburg\",\n                \"address\": \"Heuvelstraat 15\",\n                \"zip_code\": \"5038AA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-13-4567890\"\n            }\n        },\n        {\n            \"id\": 15,\n            \"name\": \"Almere Private Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 15,\n                \"city\": \"Almere\",\n                \"address\": \"Stadhuisplein 1\",\n                \"zip_code\": \"1315HR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-36-1239876\"\n            }\n        },\n        {\n            \"id\": 16,\n            \"name\": \"Nijmegen Banquet Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 16,\n                \"city\": \"Nijmegen\",\n                \"address\": \"Grote Markt 10\",\n                \"zip_code\": \"6511KH\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-24-6543210\"\n            }\n        },\n        {\n            \"id\": 17,\n            \"name\": \"Apeldoorn Cultural Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 17,\n                \"city\": \"Apeldoorn\",\n                \"address\": \"Hoofdstraat 5\",\n                \"zip_code\": \"7311KA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-55-7890123\"\n            }\n        },\n        {\n            \"id\": 18,\n            \"name\": \"Amersfoort Exclusive Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 18,\n                \"city\": \"Amersfoort\",\n                \"address\": \"Lieve Vrouweplein 3\",\n                \"zip_code\": \"3811BR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-33-2345678\"\n            }\n        },\n        {\n            \"id\": 19,\n            \"name\": \"Den Bosch Party Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 19,\n                \"city\": \"Den Bosch\",\n                \"address\": \"Markt 25\",\n                \"zip_code\": \"5211JW\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-73-3456789\"\n            }\n        },\n        {\n            \"id\": 20,\n            \"name\": \"Haarlemmermeer Event Venue\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                }\n            ],\n            \"location\": {\n                \"id\": 20,\n                \"city\": \"Haarlemmermeer\",\n                \"address\": \"Raadhuisplein 1\",\n                \"zip_code\": \"2132TZ\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-23-5678901\"\n            }\n        },\n        {\n            \"id\": 21,\n            \"name\": \"Zoetermeer Grand Hall\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 4,\n                    \"name\": \"Outdoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 21,\n                \"city\": \"Zoetermeer\",\n                \"address\": \"Stadhuisplein 10\",\n                \"zip_code\": \"2711EC\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-79-1234567\"\n            }\n        },\n        {\n            \"id\": 22,\n            \"name\": \"Leeuwarden Outdoor Events\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 6,\n                    \"name\": \"Conference\"\n                }\n            ],\n            \"location\": {\n                \"id\": 22,\n                \"city\": \"Leeuwarden\",\n                \"address\": \"Zaailand 15\",\n                \"zip_code\": \"8911BL\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-58-7654321\"\n            }\n        },\n        {\n            \"id\": 23,\n            \"name\": \"Deventer Conference Center\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 5,\n                    \"name\": \"Indoor\"\n                }\n            ],\n            \"location\": {\n                \"id\": 23,\n                \"city\": \"Deventer\",\n                \"address\": \"Brink 8\",\n                \"zip_code\": \"7411BR\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-57-9876543\"\n            }\n        },\n        {\n            \"id\": 24,\n            \"name\": \"Enschede Private Dining\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 7,\n                    \"name\": \"Private Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 24,\n                \"city\": \"Enschede\",\n                \"address\": \"Oude Markt 20\",\n                \"zip_code\": \"7511GA\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-53-4567890\"\n            }\n        },\n        {\n            \"id\": 25,\n            \"name\": \"Hengelo Exclusive Catering\",\n            \"creation_date\": \"2025-04-09 09:29:28\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                }\n            ],\n            \"location\": {\n                \"id\": 25,\n                \"city\": \"Hengelo\",\n                \"address\": \"Burgemeester Jansenplein 5\",\n                \"zip_code\": \"7551ED\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-74-1239876\"\n            }\n        },\n        {\n            \"id\": 39,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-10 22:26:57\",\n            \"tagIds\": [],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 43,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-11 16:36:39\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        },\n        {\n            \"id\": 44,\n            \"name\": \"Test Facility\",\n            \"creation_date\": \"2025-04-11 16:37:36\",\n            \"tagIds\": [\n                {\n                    \"id\": 1,\n                    \"name\": \"Wedding\"\n                },\n                {\n                    \"id\": 2,\n                    \"name\": \"Corporate Event\"\n                },\n                {\n                    \"id\": 3,\n                    \"name\": \"Birthday Party\"\n                }\n            ],\n            \"location\": {\n                \"id\": 1,\n                \"city\": \"Amsterdam\",\n                \"address\": \"Damrak 1\",\n                \"zip_code\": \"1012AB\",\n                \"country_code\": \"NL\",\n                \"phone_number\": \"+31-20-1234567\"\n            }\n        }\n    ],\n    \"pagination\": {\n        \"total_items\": 28,\n        \"current_page\": 1,\n        \"per_page\": 28,\n        \"total_pages\": 1,\n        \"offset\": 0\n    }\n}"
+						},
+						{
+							"name": "Get facilities with page=1 per_page=5",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/facilities/?page=1&per_page=5",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										""
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Get facilities with higher page number than total page number",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/facilities/?page=20&per_page=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										""
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "20"
+										},
+										{
+											"key": "per_page",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Get a spesific facility record",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/facilities/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities",
+								"2"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get a facility with existing record",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/facilities/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"2"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Get a facility with not existing record",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/facilities/99",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"99"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Update a facility record",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"name\":\"Facility Test\",\n\"location_id\":1,\n\"tagIds\":[1,7,3]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/facilities/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update an existing facility record with proper request body",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"name\": \"Test Facility\",\n\"location_id\": 1,\n\"tagIds\":[1,7,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities/35",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"35"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Update not existing facility record with tagIds",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n        \"tagIds\":[1,7,3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities/999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"999"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Update not existing facility record with tagNames (Create new tags)",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n        \"name\": \"Test Facility\",\n        \"location_id\":5,\n        \"tagNames\":[\"Test tag12\",\"Test tag234\"]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/facilities/999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"999"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Delete a facility record",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/facilities/41",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities",
+								"41"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete an existing facility",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities/32",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"32"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Delete not existing facility",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities/999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities",
+										"999"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Search in Facility records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/facilities/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"facilities",
+								""
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "facility_search_without_filter",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities?query=Wedding",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "Wedding"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Search facility with query and one filter parameter",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities?query=Rotterdam&filter=city",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "Rotterdam"
+										},
+										{
+											"key": "filter",
+											"value": "city"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "search facility with more than one parameter",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities?facility_name=Catering&city=Amsterdam&tag=Wedding",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									],
+									"query": [
+										{
+											"key": "facility_name",
+											"value": "Catering"
+										},
+										{
+											"key": "city",
+											"value": "Amsterdam"
+										},
+										{
+											"key": "tag",
+											"value": "Wedding"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Search in Facility records",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/facilities?facility_name=Catering&city=Amsterdam&tag=Wedding&operator=OR",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"facilities"
+									],
+									"query": [
+										{
+											"key": "facility_name",
+											"value": "Catering"
+										},
+										{
+											"key": "city",
+											"value": "Amsterdam"
+										},
+										{
+											"key": "tag",
+											"value": "Wedding"
+										},
+										{
+											"key": "operator",
+											"value": "OR"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tag",
+			"item": [
+				{
+					"name": "Get all tags",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/tags",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get all tags",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tags",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Get all tags with pagination parameters",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tags/?page=1&per_page=2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										""
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "2"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get tags with pagination",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/tags?page=1&per_page=3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get tags with pagination",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tags?page=1&per_page=3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Get tags with  higher page number than total page number",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tags?page=10&per_page=3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "10"
+										},
+										{
+											"key": "per_page",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Create a tag",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test tag456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tags",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create a tag with proper request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test Tag\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tags",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create a tag with empty request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tags",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create a tag with existing tag name",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Birthday Party\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tags",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get a spesific tag record",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/tags/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get a spesific tag record",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tags/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Update a tag",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Wedding3\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/tags/3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags",
+								"3"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update a tag with proper body request",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Wedding1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tags/3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										"3"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Update a tag with not proper body request",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"namexxx\": \"Wedding1\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tags/3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										"3"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Delete a tag",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tags/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tags",
+								"999"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete a tag with existing tagId",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/tags/9",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										"9"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Delete a tag with not existing tagId",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/tags/99",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tags",
+										"99"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Location",
+			"item": [
+				{
+					"name": "Get all locations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/locations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get all locations",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/locations",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get location with pagination",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/locations?page=1&per_page=3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get location with pagination",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/locations?page=1&per_page=3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "3"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get a spesific location",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/locations/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get a spesific location",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/locations/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Get a spesific location with not existing id",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/locations/99",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations",
+										"99"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Update a locoation",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"zip_code\": \"1012ABXX\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/locations/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update location with all fields",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n        \"city\": \"Amsterdam\",\n        \"address\": \"Damrak 1\",\n        \"zip_code\": \"1012ABXX\",\n        \"country_code\": \"NL\",\n        \"phone_number\": \"+31-20-1234567\"\n    }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/locations/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Update location with one field",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"zip_code\": \"1012ABXX\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/locations/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Create a location",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"city\": \"Test\",\n    \"address\": \"Test 1\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/locations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create a location with proper request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"city\": \"Test\",\n    \"address\": \"Test 1\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n    \"phone_number\": \"+31-20-123456789\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/locations",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create a location with missing fields",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"city\": \"Test\",\n    \"zip_code\": \"TestAB\",\n    \"country_code\": \"AB\",\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/locations",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Delete a location",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/locations/31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"locations",
+								"31"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete a location",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/locations/31",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"locations",
+										"31"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "auth/login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employee",
+			"item": [
+				{
+					"name": "Create an employee",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/employees",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"employees"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create an employee with proper request body",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345678\",\n  \"email\": \"janexxx@example.com\",\n  \"facilityIds\": [1, 2]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create an employee with missing email",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345678\",\n  \"facilityIds\": [1, 2]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Create an employee with wrong email format",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345678\",\n  \"email\": \"janeexample.com\",\n  \"facilityIds\": [1, 2]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Create an employee without facility Id relation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345678\",\n  \"email\": \"jane@example.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Get all employees",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": [
+						{
+							"name": "Get all employees with page=1 per_page=5",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees?page=1&per_page=5",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "per_page",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Get all employees",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Get all employees with higher page number than total page number",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees?page=20&per_page=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "20"
+										},
+										{
+											"key": "per_page",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Update Employee",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/employees",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"employees"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update Employee with one field",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Update Employee with all field",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Smith\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345679\",\n  \"email\": \"jane@example.com\",\n  \"facilityIds\": [1, 2, 3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Update Employee with existing email",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"Some Address\",\n  \"phone\": \"+31-6-12345679\",\n  \"email\": \"emma.johnson@example.com\",\n  \"facilityIds\": [1, 2, 3]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/employees/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get specific employee",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/employees/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"employees",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get specific employee",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"1"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [],
+							"body": ""
+						},
+						{
+							"name": "Get specific employee",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees/999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"999"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Delete an employee",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Amsterdam Grand Catering\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/employees/101",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"employees",
+								"101"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete an employee",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/employees/110",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"110"
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Delete an employee with not existing",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Amsterdam Grand Catering\",\n    \"location_id\": 1,\n    \"tagIds\": [1,2,3]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/employees/999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees",
+										"999"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Search Emloyee",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/employees",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"employees"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Search Employee with query",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees?query=Breda",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "Breda"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Search Employee with specific fields",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees?employee_name=Jack&address=Leeuwarden",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									],
+									"query": [
+										{
+											"key": "employee_name",
+											"value": "Jack"
+										},
+										{
+											"key": "address",
+											"value": "Leeuwarden"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Search Employee with  filter and query parameter",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/employees",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"employees"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0IiwiaWF0IjoxNzYzNjQ1NTk5LCJleHAiOjE3NjQwMDU1OTksInVzZXIiOiJhZG1pbiJ9.qf33uDhoU5etoH49WWvyNevnlk18tHWR3_rTDxdtDMI",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "page",
+			"value": "1"
+		},
+		{
+			"key": "per_page",
+			"value": "5"
+		},
+		{
+			"key": "base_url",
+			"value": "https://sezginyurdakul.com/catering_api"
+		}
+	]
 }

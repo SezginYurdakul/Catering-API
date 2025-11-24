@@ -31,3 +31,22 @@ CREATE TABLE IF NOT EXISTS Facility_Tags (
     FOREIGN KEY (facility_id) REFERENCES Facilities(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES Tags(id) ON DELETE CASCADE
 );
+
+-- Create Employees Table
+CREATE TABLE IF NOT EXISTS Employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Employee_Facility Junction Table
+CREATE TABLE IF NOT EXISTS Employee_Facility (
+    employee_id INT NOT NULL,
+    facility_id INT NOT NULL,
+    PRIMARY KEY (employee_id, facility_id),
+    FOREIGN KEY (employee_id) REFERENCES Employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (facility_id) REFERENCES Facilities(id) ON DELETE CASCADE
+);

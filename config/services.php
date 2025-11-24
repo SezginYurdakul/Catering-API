@@ -12,6 +12,7 @@ use App\Helpers\Logger;
 use Bramus\Router\Router;
 use App\Services\CustomDb;
 use Exception;
+use App\Repositories\EmployeeRepository;
 use App\Repositories\FacilityRepository;
 use App\Repositories\LocationRepository;
 use App\Repositories\TagRepository;
@@ -103,4 +104,11 @@ $di->setShared('facilityService', function () use ($di) {
     $locationService = $di->getShared('locationService');
     $tagService = $di->getShared('tagService');
     return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService);
+});
+
+$di->setShared('employeeService', function () use ($di) {
+    $db = $di->getShared('db');
+    $logger = $di->getShared('logger');
+    $employeeRepository = new EmployeeRepository($db, $logger);
+    return new \App\Services\EmployeeService($employeeRepository);
 });

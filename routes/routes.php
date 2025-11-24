@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Routes;
 
+use App\Controllers\EmployeeController;
 use App\Controllers\FacilityController;
 use App\Controllers\IndexController;
 use App\Controllers\LocationController;
@@ -41,6 +42,14 @@ $router->post('/tags',               TagController::class . '@createTag');
 $router->patch('/tags/(\d+)',        TagController::class . '@updateTag');
 $router->put('/tags/(\d+)',          TagController::class . '@updateTag');
 $router->delete('/tags/(\d+)',       TagController::class . '@deleteTag');
+
+// Employee routes
+$router->get('/employees',           EmployeeController::class . '@getEmployees');
+$router->get('/employees/(\d+)',     EmployeeController::class . '@getEmployeeById');
+$router->post('/employees',          EmployeeController::class . '@createEmployee');
+$router->patch('/employees/(\d+)',   EmployeeController::class . '@updateEmployee');
+$router->put('/employees/(\d+)',     EmployeeController::class . '@updateEmployee');
+$router->delete('/employees/(\d+)',  EmployeeController::class . '@deleteEmployee');
 
 // Auth routes
 $router->post('/auth/login', 'App\Controllers\AuthController@login');

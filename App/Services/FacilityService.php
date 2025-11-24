@@ -36,16 +36,25 @@ class FacilityService implements IFacilityService
      * @param string|null $city Optional city filter.
      * @param string|null $country Optional country filter.
      * @param string $operator Operator for combining filters ('AND' or 'OR').
+     * @param array $filters Optional legacy filters array.
+     * @param string|null $query Optional generic search query.
      * @return array
      */
-    public function getFacilities(int $page = 1, int $perPage = 10, ?string $name = null, ?string $tag = null, ?string $city = null, ?string $country = null, string $operator = 'AND'): array
+    public function getFacilities(
+        int $page = 1,
+        int $perPage = 10,
+        ?string $name = null,
+        ?string $tag = null,
+        ?string $city = null,
+        ?string $country = null,
+        string $operator = 'AND',
+        array $filters = [],
+        ?string $query = null
+    ): array
     {
         try {
             $offset = ($page - 1) * $perPage;
 
-            // Build filters array for compatibility with existing method
-            $filters = [];
-            $query = null;
             $facilityName = $name;
 
             $whereData = $this->buildWhereClause($filters, $query, $operator, $facilityName, $city, $tag);

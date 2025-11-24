@@ -57,7 +57,10 @@ class FacilityController extends BaseController
 
             // Sanitize and validate filters (for backward compatibility)
             $filters = isset($_GET['filter']) ? explode(',', $_GET['filter']) : [];
-            if (!empty($filters)) {
+            // If no filters provided, default to all
+            if (empty($filters)) {
+                $filters = ['facility_name', 'city', 'tag'];
+            } else {
                 Validator::allowedValues($filters, ['facility_name', 'city', 'tag'], 'filter');
             }
 
@@ -69,7 +72,6 @@ class FacilityController extends BaseController
             if (!in_array($operator, ['AND', 'OR'])) {
                 throw new ValidationException(['operator' => "Invalid operator. Only 'AND' or 'OR' are allowed."]);
             }
-
             // Call the service method with enhanced parameters  
             $facilitiesData = $this->facilityService->getFacilities(
                 $page, 
@@ -78,7 +80,9 @@ class FacilityController extends BaseController
                 $tag,           // tag parameter
                 $city,          // city parameter
                 null,           // country parameter (not used currently)
-                $operator
+                $operator,
+                $filters,
+                $query
             );
 
             // Check if the requested page exceeds the total number of pages
