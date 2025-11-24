@@ -85,7 +85,7 @@ class EmployeeService implements IEmployeeService
         if ($query !== null && $query !== '') {
             $queryConditions = [];
 
-            $queryFieldMap = empty($filters) ? ['employee_name', 'email'] : $filters;
+            $queryFieldMap = empty($filters) ? ['employee_name', 'address','email'] : $filters;
             foreach ($queryFieldMap as $filter) {
                 if (isset($fieldMap[$filter])) {
                     $queryConditions[] = $fieldMap[$filter] . ' LIKE :query';
@@ -143,6 +143,11 @@ class EmployeeService implements IEmployeeService
      */
     public function createEmployee(array $data): Employee
     {
+        // Check for duplicate email
+        if (!$this->employeeRepository->isEmployeeEmailUnique($data['email'])) {
+            throw new \Exception('An employee with this email already exists.');
+        }
+
         $employeeId = $this->employeeRepository->createEmployee([
             'name' => $data['name'],
             'address' => $data['address'],
@@ -167,13 +172,28 @@ class EmployeeService implements IEmployeeService
      */
     public function updateEmployee(int $id, array $data): ?Employee
     {
-        $success = $this->employeeRepository->updateEmployee($id, [
-            'name' => $data['name'],
-            'address' => $data['address'],
-            'phone' => $data['phone'],
-            'email' => $data['email']
-        ]);
+        // Fetch the existing employee record
+        $existing = $this->employeeRepository->getEmployeeById($id);
+        if (!$existing) {
+            return null;
+        }
 
+        // If email is being updated, check for duplicates (excluding self)
+        if (isset($data['email']) && $data['email'] !== $existing['email']) {
+            if (!$this->employeeRepository->isEmployeeEmailUniqueForUpdate($data['email'], $id)) {
+                throw new \Exception("Email address is already in use by another account.");
+            }
+        }
+
+        // Merge provided fields with existing values
+        $updateData = [
+            'name' => $data['name'] ?? $existing['name'],
+            'address' => $data['address'] ?? $existing['address'],
+            'phone' => $data['phone'] ?? $existing['phone'],
+            'email' => $data['email'] ?? $existing['email'],
+        ];
+
+        $success = $this->employeeRepository->updateEmployee($id, $updateData);
         if (!$success) {
             return null;
         }

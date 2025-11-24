@@ -155,47 +155,57 @@ class EmployeeController extends BaseController
      *
      * @return void
      */
+
     public function createEmployee(): void
     {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // Validate required fields
+        if (!isset($data['name'], $data['address'], $data['phone'], $data['email'])) {
+            $errorResponse = new BadRequest(["error" => "Missing required fields: name, address, phone, email"]);
+            $errorResponse->send();
+            return;
+        }
+
+        // Sanitize input data
+        $data['name'] = InputSanitizer::sanitizeText($data['name']);
+        $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+        $data['phone'] = InputSanitizer::sanitizePhone($data['phone']);
+        $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
+        if ($data['email'] === null) {
+            $errorResponse = new BadRequest(["error" => "Email is required and must be a valid email address."]);
+            $errorResponse->send();
+            return;
+        }
         try {
-            $data = json_decode(file_get_contents('php://input'), true);
+            Validator::email($data['email']);
+        } catch (\App\Plugins\Http\Exceptions\ValidationException $e) {
+            $errorResponse = new BadRequest(["error" => "Invalid email format."]);
+            $errorResponse->send();
+            return;
+        }
 
-            // Validate required fields
-            if (!isset($data['name'], $data['address'], $data['phone'], $data['email'])) {
-                $errorResponse = new BadRequest(["error" => "Missing required fields: name, address, phone, email"]);
+        // Sanitize facility IDs if provided
+        if (isset($data['facilityIds'])) {
+            if (!is_array($data['facilityIds'])) {
+                $errorResponse = new BadRequest(["error" => "facilityIds must be an array."]);
                 $errorResponse->send();
                 return;
             }
+            $data['facilityIds'] = array_map(fn($id) => InputSanitizer::sanitizeId($id), $data['facilityIds']);
+            $data['facilityIds'] = array_filter($data['facilityIds'], fn($id) => $id !== null);
+        }
 
-            // Sanitize input data
-            $data['name'] = InputSanitizer::sanitizeString($data['name']);
-            $data['address'] = InputSanitizer::sanitizeString($data['address']);
-            $data['phone'] = InputSanitizer::sanitizeString($data['phone']);
-            $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
-
-            // Validate email
-            if (!Validator::validateEmail($data['email'])) {
-                $errorResponse = new BadRequest(["error" => "Invalid email format."]);
-                $errorResponse->send();
-                return;
-            }
-
-            // Sanitize facility IDs if provided
-            if (isset($data['facilityIds'])) {
-                if (!is_array($data['facilityIds'])) {
-                    $errorResponse = new BadRequest(["error" => "facilityIds must be an array."]);
-                    $errorResponse->send();
-                    return;
-                }
-                $data['facilityIds'] = array_map(fn($id) => InputSanitizer::sanitizeId($id), $data['facilityIds']);
-                $data['facilityIds'] = array_filter($data['facilityIds'], fn($id) => $id !== null);
-            }
-
+        try {
             $employee = $this->employeeService->createEmployee($data);
-
             $response = new Created(["message" => "Employee created successfully", "data" => $employee]);
             $response->send();
         } catch (\Exception $e) {
+            if (strpos($e->getMessage(), 'already exists') !== false) {
+                $errorResponse = new BadRequest(["error" => $e->getMessage()]);
+                $errorResponse->send();
+                return;
+            }
             $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
             $errorResponse->send();
         }
@@ -224,27 +234,46 @@ class EmployeeController extends BaseController
 
             $data = json_decode(file_get_contents('php://input'), true);
 
-            // Validate required fields
-            if (!isset($data['name'], $data['address'], $data['phone'], $data['email'])) {
-                $errorResponse = new BadRequest(["error" => "Missing required fields: name, address, phone, email"]);
+            // Check if at least one updatable field is provided
+            $updatableFields = ['name', 'address', 'phone', 'email', 'facilityIds'];
+            $hasField = false;
+            foreach ($updatableFields as $field) {
+                if (isset($data[$field])) {
+                    $hasField = true;
+                    break;
+                }
+            }
+            if (!$hasField) {
+                $errorResponse = new BadRequest(["error" => "At least one updatable field (name, address, phone, email, facilityIds) must be provided."]);
                 $errorResponse->send();
                 return;
             }
 
-            // Sanitize input data
-            $data['name'] = InputSanitizer::sanitizeString($data['name']);
-            $data['address'] = InputSanitizer::sanitizeString($data['address']);
-            $data['phone'] = InputSanitizer::sanitizeString($data['phone']);
-            $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
-
-            // Validate email
-            if (!Validator::validateEmail($data['email'])) {
-                $errorResponse = new BadRequest(["error" => "Invalid email format."]);
-                $errorResponse->send();
-                return;
+            // Sanitize only the provided fields
+            if (isset($data['name'])) {
+                $data['name'] = InputSanitizer::sanitizeText($data['name']);
             }
-
-            // Sanitize facility IDs if provided
+            if (isset($data['address'])) {
+                $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+            }
+            if (isset($data['phone'])) {
+                $data['phone'] = InputSanitizer::sanitizePhone($data['phone']);
+            }
+            if (isset($data['email'])) {
+                $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
+                if ($data['email'] === null) {
+                    $errorResponse = new BadRequest(["error" => "Email is required and must be a valid email address."]);
+                    $errorResponse->send();
+                    return;
+                }
+                try {
+                    Validator::email($data['email']);
+                } catch (\App\Plugins\Http\Exceptions\ValidationException $e) {
+                    $errorResponse = new BadRequest(["error" => "Invalid email format."]);
+                    $errorResponse->send();
+                    return;
+                }
+            }
             if (isset($data['facilityIds'])) {
                 if (!is_array($data['facilityIds'])) {
                     $errorResponse = new BadRequest(["error" => "facilityIds must be an array."]);
@@ -266,6 +295,11 @@ class EmployeeController extends BaseController
             $response = new Ok(["message" => "Employee updated successfully", "data" => $employee]);
             $response->send();
         } catch (\Exception $e) {
+            if (strpos($e->getMessage(), 'already in use') !== false) {
+                $errorResponse = new BadRequest(["error" => $e->getMessage()]);
+                $errorResponse->send();
+                return;
+            }
             $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
             $errorResponse->send();
         }

@@ -180,8 +180,8 @@ class EmployeeRepository
                 VALUES (:name, :address, :phone, :email)
             ";
 
-            $this->db->executeInsertUpdateDeleteQuery($query, $data);
-            return (int) $this->db->lastInsertId();
+            $this->db->executeQuery($query, $data);
+            return (int) $this->db->getLastInsertedIdAsInt();
         } catch (\Exception $e) {
             if ($this->logger) {
                 $this->logger->logDatabaseError('INSERT', 'createEmployee', $e->getMessage());
@@ -208,7 +208,7 @@ class EmployeeRepository
             ";
 
             $data['id'] = $id;
-            $affectedRows = $this->db->executeInsertUpdateDeleteQuery($query, $data);
+            $affectedRows = $this->db->executeQuery($query, $data);
             return $affectedRows > 0;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -228,9 +228,15 @@ class EmployeeRepository
     public function deleteEmployee(int $id): bool
     {
         try {
+            // First, check if the employee exists
+            $exists = $this->getEmployeeById($id);
+            if (!$exists) {
+                return false;
+            }
             $query = "DELETE FROM Employees WHERE id = :id";
-            $affectedRows = $this->db->executeInsertUpdateDeleteQuery($query, ['id' => $id]);
-            return $affectedRows > 0;
+            $result = $this->db->executeQuery($query, ['id' => $id]);
+            // Since executeQuery returns bool, check for success
+            return $result === true;
         } catch (\Exception $e) {
             if ($this->logger) {
                 $this->logger->logDatabaseError('DELETE', 'deleteEmployee', $e->getMessage());
@@ -252,13 +258,13 @@ class EmployeeRepository
         try {
             // Delete existing relationships
             $deleteQuery = "DELETE FROM Employee_Facility WHERE employee_id = :employeeId";
-            $this->db->executeInsertUpdateDeleteQuery($deleteQuery, ['employeeId' => $employeeId]);
+            $this->db->executeQuery($deleteQuery, ['employeeId' => $employeeId]);
 
             // Insert new relationships
             if (!empty($facilityIds)) {
                 $insertQuery = "INSERT INTO Employee_Facility (employee_id, facility_id) VALUES (:employeeId, :facilityId)";
                 foreach ($facilityIds as $facilityId) {
-                    $this->db->executeInsertUpdateDeleteQuery($insertQuery, [
+                    $this->db->executeQuery($insertQuery, [
                         'employeeId' => $employeeId,
                         'facilityId' => $facilityId
                     ]);
@@ -270,5 +276,60 @@ class EmployeeRepository
             }
             throw new \Exception("Failed to add employee facilities: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Get an employee by email.
+     *
+     * @param string $email
+     * @return array|null
+     * @throws \Exception
+     */
+    public function getEmployeeByEmail(string $email): ?array
+    {
+        try {
+            $query = "SELECT id, name, address, phone, email, created_at FROM Employees WHERE email = :email";
+            $stmt = $this->db->executeSelectQuery($query, [':email' => $email]);
+            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->logDatabaseError('SELECT', 'getEmployeeByEmail', $e->getMessage());
+            }
+            throw new \Exception("Failed to fetch employee by email: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if an employee email is unique.
+     *
+     * @param string $email
+     * @return bool
+     * @throws \Exception
+     */
+    public function isEmployeeEmailUnique(string $email): bool
+    {
+        try {
+            $query = "SELECT COUNT(*) FROM Employees WHERE email = :email";
+            $stmt = $this->db->executeSelectQuery($query, [':email' => $email]);
+            return (int) $stmt->fetchColumn() === 0;
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to check if employee email '$email' is unique: " . $e->getMessage());
+        }
+    }
+    /**
+     * Check if an employee email is unique for update (excluding self).
+     *
+     * @param string $email
+     * @param int $excludeId
+     * @return bool
+     * @throws \Exception
+     */
+
+    public function isEmployeeEmailUniqueForUpdate(string $email, int $excludeId): bool
+    {
+        $query = "SELECT COUNT(*) FROM Employees WHERE email = :email AND id != :id";
+        $stmt = $this->db->executeSelectQuery($query, [':email' => $email, ':id' => $excludeId]);
+        return (int) $stmt->fetchColumn() === 0;
     }
 }
