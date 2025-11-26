@@ -1,6 +1,9 @@
-# Catering API
-
-A RESTful API for managing catering facilities, locations, tags, and employees with JWT authentication.
+## API Documentation: Catering API
+### Important None:
+You can test the API directly using my Postman collection:
+click to open => https://solar-resonance-278359.postman.co/workspace/Team-Workspace~1a2d800b-458f-49ba-8fa2-db0eb7f4301e/collection/22299640-f0d40563-5130-4491-b0b8-5ddf6ada84a9?action=share&creator=22299640
+### Description
+This API is designed to manage backend operations for a catering service. It provides endpoints for managing facilities, locations, and tags, including CRUD operations, search functionality, and pagination support.
 
 ## 🚀 Quick Start
 
@@ -339,5 +342,4 @@ This project is open source and available for educational purposes.
 ---
 
 ## 📞 Support
-
 For issues or questions, please refer to the documentation in the `docs/` directory.
