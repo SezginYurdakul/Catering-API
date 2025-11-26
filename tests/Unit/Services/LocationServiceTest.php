@@ -298,7 +298,7 @@ class LocationServiceTest extends TestCase
             ->willReturn(true);
 
         $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("Location with ID '1' cannot be deleted because it is in use by one or more facilities");
+        $this->expectExceptionMessage("This Location cannot be deleted because it is currently in use by related one or more facilities");
 
         $this->locationService->deleteLocation($locationId);
     }

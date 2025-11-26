@@ -236,7 +236,7 @@ class LocationControllerTest extends TestCase
             ->willThrowException(new ResourceInUseException('Location', $locationId, 'one or more facilities'));
 
         $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("Location with ID '1' cannot be deleted because it is in use by one or more facilities");
+        $this->expectExceptionMessage("This Location cannot be deleted because it is currently in use by related one or more facilities");
 
         $this->mockLocationService->deleteLocation($locationId);
     }

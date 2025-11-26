@@ -173,10 +173,9 @@ class FacilityServiceTest extends TestCase
             ->with($facilityId)
             ->willReturn(null);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Facility with ID 999 does not exist');
+        $result = $this->facilityService->getFacilityById($facilityId);
 
-        $this->facilityService->getFacilityById($facilityId);
+        $this->assertNull($result);
     }
 
     public function testCreateFacilityWithMixedTags(): void
@@ -414,7 +413,8 @@ class FacilityServiceTest extends TestCase
         $this->mockFacilityRepository
             ->expects($this->once())
             ->method('updateFacility')
-            ->with(1, ['name' => 'Updated Facility', 'location_id' => 1]);
+            ->with(1, ['name' => 'Updated Facility', 'location_id' => 1])
+            ->willReturn(1);
 
         // Mock addTagsToFacility
         $this->mockFacilityRepository
@@ -452,37 +452,19 @@ class FacilityServiceTest extends TestCase
 
     public function testDeleteFacility(): void
     {
-        $facilityData = [
-            'facility_id' => 1,
-            'facility_name' => 'Test Facility',
-            'location_id' => 1,
-            'creation_date' => '2024-01-01 10:00:00'
-        ];
-
-        $mockLocation = new Location(1, 'Amsterdam');
-
-        // Mock getFacilityById to check if exists
+        // Mock getEmployeesByFacilityId to check if facility is in use
         $this->mockFacilityRepository
             ->expects($this->once())
-            ->method('getFacilityById')
+            ->method('getEmployeesByFacilityId')
             ->with(1)
-            ->willReturn($facilityData);
-
-        $this->mockLocationService
-            ->expects($this->once())
-            ->method('getLocationById')
-            ->willReturn($mockLocation);
-
-        $this->mockTagService
-            ->expects($this->once())
-            ->method('getTagsByFacilityId')
-            ->willReturn([]);
+            ->willReturn([]); // No employees, so facility can be deleted
 
         // Mock deleteFacility
         $this->mockFacilityRepository
             ->expects($this->once())
             ->method('deleteFacility')
-            ->with(1);
+            ->with(1)
+            ->willReturn(true);
 
         $result = $this->facilityService->deleteFacility(1);
 
