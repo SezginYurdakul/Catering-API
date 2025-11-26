@@ -25,7 +25,7 @@ interface ITagService
      * @param int $id
      * @return Tag
      */
-    public function getTagById(int $id): Tag;
+    public function getTagById(int $id): ?Tag;
 
     /**
      * Get tags by facility ID.

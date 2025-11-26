@@ -25,7 +25,7 @@ interface ILocationService
      * @param int $id
      * @return Location
      */
-    public function getLocationById(int $id): Location;
+    public function getLocationById(int $id): ?Location;
 
     /**
      * Create a new location.
