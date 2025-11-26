@@ -128,11 +128,55 @@ vendor/bin/phpunit
 find tests/ -name "*.php" | entr vendor/bin/phpunit
 ```
 
+### Example 5: Docker - Test Specific Service
+```bash
+docker-compose exec app vendor/bin/phpunit tests/Unit/Services/FacilityServiceTest.php --testdox
+```
+
+### Example 6: Docker - Debug Failed Tests
+```bash
+docker-compose exec app vendor/bin/phpunit --stop-on-failure --verbose
+```
+
+## Docker Test Commands
+
+```bash
+# Run all tests in Docker container
+docker-compose exec app vendor/bin/phpunit
+
+# Run with testdox format
+docker-compose exec app vendor/bin/phpunit --testdox
+
+# Run unit tests only
+docker-compose exec app composer test-unit
+
+# Run integration tests
+docker-compose exec app composer test-integration
+
+# Run with coverage (requires xdebug)
+docker-compose exec app composer test-coverage
+
+# Run specific test file
+docker-compose exec app vendor/bin/phpunit tests/Unit/Services/FacilityServiceTest.php
+
+# Stop on first failure
+docker-compose exec app vendor/bin/phpunit --stop-on-failure
+
+# Interactive shell access for running tests
+docker-compose exec app bash
+```
+
 ## Common Composer Scripts
 
 ```bash
+# Run all tests
+composer test
+
 # Run unit tests
 composer test-unit
+
+# Run integration tests
+composer test-integration
 
 # Run with coverage (requires xdebug)
 composer test-coverage
