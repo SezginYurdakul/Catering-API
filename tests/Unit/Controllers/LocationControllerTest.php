@@ -9,6 +9,8 @@ use App\Controllers\LocationController;
 use App\Services\ILocationService;
 use App\Plugins\Di\Factory;
 use App\Models\Location;
+use App\Domain\Exceptions\ResourceInUseException;
+use App\Domain\Exceptions\DatabaseException;
 
 class LocationControllerTest extends TestCase
 {
@@ -20,7 +22,7 @@ class LocationControllerTest extends TestCase
         // Mock the Dependency Injection container
         $this->mockDi = $this->createMock(Factory::class);
         $this->mockLocationService = $this->createMock(ILocationService::class);
-        
+
         $this->mockDi
             ->method('getShared')
             ->with('locationService')
@@ -97,12 +99,11 @@ class LocationControllerTest extends TestCase
             ->expects($this->once())
             ->method('getLocationById')
             ->with($locationId)
-            ->willThrowException(new \Exception('Location not found'));
+            ->willReturn(null); // Service returns null for not found
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Location not found');
+        $result = $this->mockLocationService->getLocationById($locationId);
 
-        $this->mockLocationService->getLocationById($locationId);
+        $this->assertNull($result);
     }
 
     public function testCreateLocationJsonValidation(): void
@@ -185,15 +186,13 @@ class LocationControllerTest extends TestCase
 
         $this->mockLocationService
             ->expects($this->once())
-            ->method('updateLocation')
-            ->willThrowException(new \Exception('Location not found'));
+            ->method('getLocationById')
+            ->with($locationId)
+            ->willReturn(null); // Service returns null for not found
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Location not found');
+        $result = $this->mockLocationService->getLocationById($locationId);
 
-        $this->mockLocationService->updateLocation(
-            new Location($locationId, 'Non-existent', 'Address', '0000 XX', 'XX', '+00-00-0000000')
-        );
+        $this->assertNull($result);
     }
 
     public function testDeleteLocationSuccess(): void
@@ -217,14 +216,13 @@ class LocationControllerTest extends TestCase
 
         $this->mockLocationService
             ->expects($this->once())
-            ->method('deleteLocation')
+            ->method('getLocationById')
             ->with($locationId)
-            ->willThrowException(new \Exception('Location not found'));
+            ->willReturn(null); // Service returns null for not found
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Location not found');
+        $result = $this->mockLocationService->getLocationById($locationId);
 
-        $this->mockLocationService->deleteLocation($locationId);
+        $this->assertNull($result);
     }
 
     public function testDeleteLocationUsedByFacilities(): void
@@ -235,10 +233,10 @@ class LocationControllerTest extends TestCase
             ->expects($this->once())
             ->method('deleteLocation')
             ->with($locationId)
-            ->willThrowException(new \Exception('Cannot delete location: it is associated with facilities'));
+            ->willThrowException(new ResourceInUseException('Location', $locationId, 'one or more facilities'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Cannot delete location');
+        $this->expectException(ResourceInUseException::class);
+        $this->expectExceptionMessage("Location with ID '1' cannot be deleted because it is in use by one or more facilities");
 
         $this->mockLocationService->deleteLocation($locationId);
     }
@@ -278,13 +276,13 @@ class LocationControllerTest extends TestCase
 
     public function testErrorHandlingForServiceExceptions(): void
     {
-        // Test exception propagation from service layer
+        // Test exception propagation from service layer - using DatabaseException
         $this->mockLocationService
             ->method('getAllLocations')
-            ->willThrowException(new \Exception('Database connection failed'));
+            ->willThrowException(new DatabaseException('SELECT', 'Locations', 'Connection failed'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Database connection failed');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: SELECT on Locations');
 
         $this->mockLocationService->getAllLocations(1, 10);
     }

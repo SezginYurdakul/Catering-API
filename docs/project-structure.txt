@@ -1,0 +1,197 @@
+.
+├── App
+│   ├── Controllers
+│   │   ├── AuthController.php           # JWT authentication and login
+│   │   ├── BaseController.php           # Base controller with DI support
+│   │   ├── EmployeeController.php       # Employee CRUD operations
+│   │   ├── FacilityController.php       # Facility CRUD with tags and employees
+│   │   ├── IndexController.php          # API index/health check
+│   │   ├── LocationController.php       # Location CRUD operations
+│   │   └── TagController.php            # Tag CRUD operations
+│   ├── Domain
+│   │   └── Exceptions                   # Domain-specific exception hierarchy
+│   │       ├── BusinessRuleViolationException.php
+│   │       ├── DatabaseException.php    # Database operation failures
+│   │       ├── DomainException.php      # Base domain exception
+│   │       ├── DuplicateResourceException.php
+│   │       ├── ExternalServiceExeption.php
+│   │       ├── InvalidOperationException.php
+│   │       ├── ResourceInUseException.php
+│   │       └── ResourceNotFoundException.php
+│   ├── Helpers
+│   │   ├── ErrorHandler.php             # Global exception handler with logging
+│   │   ├── InputSanitizer.php           # Input sanitization utilities
+│   │   ├── Logger.php                   # Logging with GDPR-compliant sanitization
+│   │   ├── PaginationHelper.php         # Pagination logic and metadata
+│   │   └── Validator.php                # Input validation with batch error collection
+│   ├── Middleware
+│   │   └── AuthMiddleware.php           # JWT token verification
+│   ├── Models
+│   │   ├── Employee.php                 # Employee domain model
+│   │   ├── Facility.php                 # Facility domain model
+│   │   ├── Location.php                 # Location domain model
+│   │   └── Tag.php                      # Tag domain model
+│   ├── Plugins
+│   │   ├── Db
+│   │   │   ├── Adapters
+│   │   │   │   ├── IAdapter.php         # Database adapter interface
+│   │   │   │   └── MySql.php            # MySQL adapter implementation
+│   │   │   ├── Connection
+│   │   │   │   ├── Connection.php       # Abstract connection class
+│   │   │   │   ├── IConnection.php      # Connection interface
+│   │   │   │   └── Mysql.php            # MySQL connection implementation
+│   │   │   ├── Db.php                   # Main database class
+│   │   │   └── IDb.php                  # Database interface
+│   │   ├── Di
+│   │   │   ├── Base.php                 # Base DI container
+│   │   │   ├── Factory.php              # DI factory pattern
+│   │   │   ├── Injectable.php           # Injectable trait
+│   │   │   ├── ReflectionHelper.php     # Reflection utilities for DI
+│   │   │   └── Traits
+│   │   │       └── InjectionAwareTrait.php
+│   │   └── Http
+│   │       ├── ApiException.php         # Base API exception
+│   │       ├── Exceptions               # HTTP exception classes
+│   │       │   ├── BadRequest.php
+│   │       │   ├── InternalServerError.php
+│   │       │   ├── NotFound.php
+│   │       │   ├── Unauthorized.php
+│   │       │   └── ValidationException.php
+│   │       ├── IStatus.php              # Status interface
+│   │       ├── JsonStatus.php           # JSON status response
+│   │       ├── Response                 # HTTP response classes
+│   │       │   ├── BadRequest.php       # 400 Bad Request
+│   │       │   ├── Created.php          # 201 Created
+│   │       │   ├── InternalServerError.php  # 500 Internal Server Error
+│   │       │   ├── NoContent.php        # 204 No Content
+│   │       │   ├── NotFound.php         # 404 Not Found
+│   │       │   ├── Ok.php               # 200 OK
+│   │       │   └── Unauthorized.php     # 401 Unauthorized
+│   │       └── Status.php               # Status code constants
+│   ├── Repositories
+│   │   ├── EmployeeRepository.php       # Employee data access
+│   │   ├── FacilityRepository.php       # Facility data access
+│   │   ├── LocationRepository.php       # Location data access
+│   │   └── TagRepository.php            # Tag data access
+│   └── Services
+│       ├── CustomDb.php                 # Custom database service
+│       ├── EmployeeService.php          # Employee business logic
+│       ├── FacilityService.php          # Facility business logic
+│       ├── IEmployeeService.php         # Employee service interface
+│       ├── IFacilityService.php         # Facility service interface
+│       ├── ILocationService.php         # Location service interface
+│       ├── ITagService.php              # Tag service interface
+│       ├── LocationService.php          # Location business logic
+│       └── TagService.php               # Tag business logic
+├── composer.json                        # PHP dependencies
+├── composer.lock
+├── config
+│   ├── config.php                       # Application configuration
+│   └── services.php                     # DI service definitions
+├── docker-compose.yml                   # Docker services configuration
+├── Dockerfile                           # PHP-FPM container definition
+├── docs
+│   ├── Exeption management.md           # Exception handling documentation
+│   ├── PROJECT-INSTALLATION.md          # Installation guide
+│   ├── REFACTORING.md                   # Refactoring notes
+│   ├── TEST_COMMANDS.md                 # Testing commands reference
+│   ├── TEST_UPDATES_SUMMARY.md          # Test updates documentation
+│   └── UNIT_TEST_STRATEGY.md            # Unit testing strategy
+├── .env                                 # Environment variables (not in git)
+├── .env.example                         # Example environment file
+├── .env.testing                         # Testing environment variables
+├── .gitignore
+├── .htaccess                            # Apache configuration
+├── logs
+│   ├── api.log                          # Application logs
+│   ├── debug.log                        # Debug logs (development)
+│   ├── error_fallback.log               # Fallback error logs
+│   └── README.md
+├── nginx.conf                           # Nginx configuration
+├── .phpunit.result.cache
+├── phpunit.xml                          # PHPUnit configuration
+├── postman
+│   └── Facility_API.postman_collection.json
+├── project-structure.txt                # This file
+├── public
+│   ├── .htaccess
+│   └── index.php                        # Application entry point
+├── README.md                            # Project documentation
+├── routes
+│   ├── router.php                       # Route dispatcher
+│   └── routes.php                       # Route definitions
+├── sql
+│   ├── 01_create_database.sql
+│   ├── 02_create_tables.sql
+│   ├── 03_seed_tables.sql
+│   ├── 04_clear_data.sql
+│   ├── 05_drop_tables.sql
+│   ├── catering_db.sql                  # Complete database dump
+│   ├── database_manager.php             # Database management CLI tool
+│   └── README.md
+└── tests
+    ├── bootstrap.php                    # Test bootstrap
+    ├── Integration                      # Integration tests (future)
+    └── Unit                             # Unit tests
+        ├── Controllers
+        │   ├── AuthControllerTest.php
+        │   ├── FacilityControllerTest.php
+        │   ├── LocationControllerTest.php
+        │   └── TagControllerTest.php
+        ├── Helpers
+        │   ├── InputSanitizerTest.php
+        │   ├── LoggerSanitizationTest.php  # GDPR compliance tests
+        │   ├── PaginationHelperTest.php
+        │   └── ValidatorTest.php
+        ├── Middleware
+        │   └── AuthMiddlewareTest.php
+        ├── Models
+        │   ├── FacilityTest.php
+        │   ├── LocationTest.php
+        │   └── TagTest.php
+        └── Services
+            ├── FacilityServiceTest.php
+            ├── LocationServiceTest.php
+            └── TagServiceTest.php
+
+## Key Features
+
+### Architecture
+- **MVC Pattern**: Clean separation of concerns (Models, Controllers, Services)
+- **Repository Pattern**: Data access abstraction
+- **Service Layer**: Business logic encapsulation
+- **Dependency Injection**: DI container with service definitions
+- **Domain Exceptions**: Type-safe error handling with context
+
+### Security
+- **JWT Authentication**: Token-based authentication
+- **Input Sanitization**: All user inputs sanitized
+- **GDPR Compliance**: Sensitive data filtering in logs
+- **SQL Injection Prevention**: Prepared statements throughout
+
+### Error Handling
+- **Domain Exception Hierarchy**: Structured exceptions with error codes
+- **Multi-Level Logging**: CRITICAL, ERROR, WARNING, INFO, DEBUG
+- **Environment-Aware**: Detailed errors in dev, minimal in production
+- **Request Tracking**: Unique request IDs for error correlation
+
+### API Features
+- **RESTful Design**: Standard HTTP methods and status codes
+- **Pagination**: Configurable page size with metadata
+- **Search & Filtering**: Multi-field search with AND/OR operators
+- **Validation**: Comprehensive input validation with batch error reporting
+- **JSON Responses**: Consistent JSON format across all endpoints
+
+### Testing
+- **Unit Tests**: Comprehensive test coverage for services, controllers, helpers
+- **Test Isolation**: Mocked dependencies for fast, reliable tests
+- **PHPUnit**: Industry-standard testing framework
+- **Docker Support**: Containerized test environment
+
+### DevOps
+- **Docker Compose**: Multi-container setup (PHP, MySQL, Nginx, phpMyAdmin)
+- **Database Migrations**: Versioned SQL scripts
+- **Logging**: Structured JSON logs with rotation support
+- **Health Checks**: API status endpoint
+
+37 directories, 120 files

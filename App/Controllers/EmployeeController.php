@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\IEmployeeService;
-use App\Models\Employee;
 use App\Plugins\Http\Response\Ok;
 use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
 use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Http\Exceptions\NotFound;
 use App\Helpers\InputSanitizer;
 use App\Helpers\Validator;
 
@@ -19,10 +16,6 @@ class EmployeeController extends BaseController
 {
     private IEmployeeService $employeeService;
 
-    /**
-     * Constructor to initialize the EmployeeService from the DI container.
-     * Authenticates the user with the AuthMiddleware.
-     */
     public function __construct()
     {
         parent::__construct();
@@ -31,140 +24,147 @@ class EmployeeController extends BaseController
     }
 
     /**
-     * Get all employees.
-     * Sends a 200 OK response with the list of employees.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @return void
+     * Get all employees with pagination and search filters.
      */
     public function getEmployees(): void
     {
-        try {
-            Validator::pagination($_GET);
+        $errors = [];
 
-            $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
-            $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
+        // Pagination validation using new validate* method
+        $errors = array_merge($errors, Validator::validatePagination($_GET));
 
-            if ($page === null || $perPage === null) {
-                throw new ValidationException(['pagination' => "'page' and 'per_page' must be positive integers."]);
-            }
+        $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
 
-            $query = isset($_GET['query']) ? InputSanitizer::sanitize(['value' => $_GET['query']])['value'] : null;
-
-            $filters = isset($_GET['filter']) ? array_filter(array_map('trim', explode(',', (string) $_GET['filter']))) : [];
-            if (!empty($filters)) {
-                Validator::allowedValues($filters, ['employee_name', 'email', 'phone', 'address', 'facility_name', 'city'], 'filter');
-            }
-
-            $employeeName = isset($_GET['employee_name']) ? InputSanitizer::sanitize(['value' => $_GET['employee_name']])['value'] : null;
-            $email = isset($_GET['email']) ? InputSanitizer::sanitize(['value' => $_GET['email']])['value'] : null;
-            $phone = isset($_GET['phone']) ? InputSanitizer::sanitize(['value' => $_GET['phone']])['value'] : null;
-            $address = isset($_GET['address']) ? InputSanitizer::sanitize(['value' => $_GET['address']])['value'] : null;
-            $facilityName = isset($_GET['facility_name']) ? InputSanitizer::sanitize(['value' => $_GET['facility_name']])['value'] : null;
-            $city = isset($_GET['city']) ? InputSanitizer::sanitize(['value' => $_GET['city']])['value'] : null;
-
-            foreach (['employeeName', 'email', 'phone', 'address', 'facilityName', 'city', 'query'] as $paramName) {
-                $value = $$paramName ?? null;
-                if ($value !== null && $value === '') {
-                    $$paramName = null;
-                }
-            }
-
-            $operator = isset($_GET['operator']) ? strtoupper(trim((string) $_GET['operator'])) : 'AND';
-            if (!in_array($operator, ['AND', 'OR'], true)) {
-                throw new ValidationException(['operator' => "Invalid operator. Only 'AND' or 'OR' are allowed."]);
-            }
-
-            $searchParams = [
-                'query' => $query,
-                'filters' => $filters,
-                'operator' => $operator,
-                'employee_name' => $employeeName,
-                'email' => $email,
-                'phone' => $phone,
-                'address' => $address,
-                'facility_name' => $facilityName,
-                'city' => $city,
-            ];
-
-            $employees = $this->employeeService->getEmployees($page, $perPage, $searchParams);
-
-            $totalItems = $employees['pagination']['total_items'];
-            $totalPages = (int) ceil($totalItems / $perPage);
-            if ($totalPages > 0 && $page > $totalPages) {
-                throw new ValidationException([
-                    'page' => "The requested page ($page) exceeds the total number of pages ($totalPages)."
-                ]);
-            }
-
-            $response = new Ok($employees);
-            $response->send();
-        } catch (ValidationException $e) {
-            $errorResponse = new BadRequest([
-                'error' => 'Validation failed',
-                'details' => $e->getErrors()
-            ]);
-            $errorResponse->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
-            $errorResponse->send();
+        // Query parameter
+        $query = isset($_GET['query']) ? InputSanitizer::sanitize(['value' => $_GET['query']])['value'] : null;
+        if ($query !== null && $query === '') {
+            $query = null;
         }
+
+        // Filters validation
+        $filters = isset($_GET['filter']) 
+            ? array_filter(array_map('trim', explode(',', (string) $_GET['filter']))) 
+            : [];
+        
+        $allowedFilters = ['employee_name', 'email', 'phone', 'address', 'facility_name', 'city'];
+        if (!empty($filters)) {
+            $error = Validator::validateAllowedValues($filters, $allowedFilters, 'filter');
+            if ($error) {
+                $errors['filter'] = $error;
+            }
+        }
+
+        // Operator validation
+        $operator = isset($_GET['operator']) ? strtoupper(trim((string) $_GET['operator'])) : 'AND';
+        $error = Validator::validateOperator($operator);
+        if ($error) {
+            $errors['operator'] = $error;
+        }
+
+        // Throw all validation errors at once
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Sanitize search parameters
+        $employeeName = isset($_GET['employee_name']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['employee_name']])['value'] 
+            : null;
+        $email = isset($_GET['email']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['email']])['value'] 
+            : null;
+        $phone = isset($_GET['phone']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['phone']])['value'] 
+            : null;
+        $address = isset($_GET['address']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['address']])['value'] 
+            : null;
+        $facilityName = isset($_GET['facility_name']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['facility_name']])['value'] 
+            : null;
+        $city = isset($_GET['city']) 
+            ? InputSanitizer::sanitize(['value' => $_GET['city']])['value'] 
+            : null;
+
+        // Convert empty strings to null
+        foreach (['employeeName', 'email', 'phone', 'address', 'facilityName', 'city'] as $paramName) {
+            if ($$paramName === '') {
+                $$paramName = null;
+            }
+        }
+
+        // Build search parameters
+        $searchParams = [
+            'query' => $query,
+            'filters' => $filters,
+            'operator' => $operator,
+            'employee_name' => $employeeName,
+            'email' => $email,
+            'phone' => $phone,
+            'address' => $address,
+            'facility_name' => $facilityName,
+            'city' => $city,
+        ];
+
+        // Get employees
+        $employees = $this->employeeService->getEmployees($page, $perPage, $searchParams);
+
+        // Validate page number against total pages
+        $totalItems = $employees['pagination']['total_items'];
+        $totalPages = (int) ceil($totalItems / $perPage);
+        
+        if ($totalPages > 0 && $page > $totalPages) {
+            throw new ValidationException([
+                'page' => "The requested page ($page) exceeds the total number of pages ($totalPages)."
+            ]);
+        }
+
+        $response = new Ok($employees);
+        $response->send();
     }
 
     /**
-     * Get a specific employee by its ID.
-     * Sends a 200 OK response if the employee is found.
-     * Sends a 404 Not Found response if the employee does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
+     * Get a specific employee by ID.
      */
     public function getEmployeeById(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid employee ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
+        $errors = [];
 
-            $employee = $this->employeeService->getEmployeeById($id);
-
-            if (!$employee) {
-                $errorResponse = new NotFound(["error" => "Employee with ID $id not found."]);
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(["data" => $employee]);
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        $employee = $this->employeeService->getEmployeeById($id);
+
+        if (!$employee) {
+            throw new NotFound('', 'Employee', (string)$id);
+        }
+
+        $response = new Ok(["data" => $employee]);
+        $response->send();
     }
 
     /**
      * Create a new employee.
-     * Sends a 201 Created response if the employee is created successfully.
-     * Sends a 400 Bad Request response if validation fails.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @return void
      */
-
     public function createEmployee(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
+        $errors = [];
 
-        // Validate required fields
-        if (!isset($data['name'], $data['address'], $data['phone'], $data['email'])) {
-            $errorResponse = new BadRequest(["error" => "Missing required fields: name, address, phone, email"]);
-            $errorResponse->send();
-            return;
+        // Validate required fields using new validate* method
+        $errors = array_merge($errors, Validator::validateRequired($data, ['name', 'address', 'phone', 'email']));
+
+        // If required fields missing, throw immediately
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
 
         // Sanitize input data
@@ -172,172 +172,158 @@ class EmployeeController extends BaseController
         $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
         $data['phone'] = InputSanitizer::sanitizePhone($data['phone']);
         $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
+
+        // Validate email
         if ($data['email'] === null) {
-            $errorResponse = new BadRequest(["error" => "Email is required and must be a valid email address."]);
-            $errorResponse->send();
-            return;
-        }
-        try {
-            Validator::email($data['email']);
-        } catch (\App\Plugins\Http\Exceptions\ValidationException $e) {
-            $errorResponse = new BadRequest(["error" => "Invalid email format."]);
-            $errorResponse->send();
-            return;
+            $errors['email'] = 'Email must be a valid email address';
+        } else {
+            $error = Validator::validateEmail($data['email']);
+            if ($error) {
+                $errors['email'] = $error;
+            }
         }
 
-        // Sanitize facility IDs if provided
+        // Sanitize and validate facility IDs
         if (isset($data['facilityIds'])) {
             if (!is_array($data['facilityIds'])) {
-                $errorResponse = new BadRequest(["error" => "facilityIds must be an array."]);
-                $errorResponse->send();
-                return;
+                $errors['facilityIds'] = 'facilityIds must be an array';
+            } else {
+                $data['facilityIds'] = array_map(fn($id) => InputSanitizer::sanitizeId($id), $data['facilityIds']);
+                $data['facilityIds'] = array_filter($data['facilityIds'], fn($id) => $id !== null);
+                
+                if (empty($data['facilityIds'])) {
+                    $errors['facilityIds'] = 'facilityIds must contain at least one valid ID';
+                }
             }
-            $data['facilityIds'] = array_map(fn($id) => InputSanitizer::sanitizeId($id), $data['facilityIds']);
-            $data['facilityIds'] = array_filter($data['facilityIds'], fn($id) => $id !== null);
         }
 
-        try {
-            $employee = $this->employeeService->createEmployee($data);
-            $response = new Created(["message" => "Employee created successfully", "data" => $employee]);
-            $response->send();
-        } catch (\Exception $e) {
-            if (strpos($e->getMessage(), 'already exists') !== false) {
-                $errorResponse = new BadRequest(["error" => $e->getMessage()]);
-                $errorResponse->send();
-                return;
-            }
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
-            $errorResponse->send();
+        // Throw all validation errors
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
+
+        // Create employee
+        $employee = $this->employeeService->createEmployee($data);
+        
+        $response = new Created([
+            "message" => "Employee created successfully", 
+            "data" => $employee
+        ]);
+        $response->send();
     }
 
     /**
      * Update an existing employee.
-     * Sends a 200 OK response if the employee is updated successfully.
-     * Sends a 400 Bad Request response if validation fails.
-     * Sends a 404 Not Found response if the employee does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
      */
     public function updateEmployee(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid employee ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
+        $errors = [];
 
-            $data = json_decode(file_get_contents('php://input'), true);
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            throw new ValidationException(['id' => $error]);
+        }
 
-            // Check if at least one updatable field is provided
-            $updatableFields = ['name', 'address', 'phone', 'email', 'facilityIds'];
-            $hasField = false;
-            foreach ($updatableFields as $field) {
-                if (isset($data[$field])) {
-                    $hasField = true;
-                    break;
-                }
-            }
-            if (!$hasField) {
-                $errorResponse = new BadRequest(["error" => "At least one updatable field (name, address, phone, email, facilityIds) must be provided."]);
-                $errorResponse->send();
-                return;
-            }
+        $data = json_decode(file_get_contents('php://input'), true);
 
-            // Sanitize only the provided fields
-            if (isset($data['name'])) {
-                $data['name'] = InputSanitizer::sanitizeText($data['name']);
+        // Check if at least one updatable field is provided
+        $updatableFields = ['name', 'address', 'phone', 'email', 'facilityIds'];
+        $providedFields = array_intersect($updatableFields, array_keys($data ?? []));
+        
+        if (empty($providedFields)) {
+            throw new ValidationException([
+                'fields' => 'At least one updatable field (name, address, phone, email, facilityIds) must be provided'
+            ]);
+        }
+
+        // Sanitize and validate provided fields
+        if (isset($data['name'])) {
+            $data['name'] = InputSanitizer::sanitizeText($data['name']);
+            if (empty($data['name'])) {
+                $errors['name'] = 'Name cannot be empty';
             }
-            if (isset($data['address'])) {
-                $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+        }
+
+        if (isset($data['address'])) {
+            $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+            if (empty($data['address'])) {
+                $errors['address'] = 'Address cannot be empty';
             }
-            if (isset($data['phone'])) {
-                $data['phone'] = InputSanitizer::sanitizePhone($data['phone']);
+        }
+
+        if (isset($data['phone'])) {
+            $data['phone'] = InputSanitizer::sanitizePhone($data['phone']);
+            if (empty($data['phone'])) {
+                $errors['phone'] = 'Phone cannot be empty';
             }
-            if (isset($data['email'])) {
-                $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
-                if ($data['email'] === null) {
-                    $errorResponse = new BadRequest(["error" => "Email is required and must be a valid email address."]);
-                    $errorResponse->send();
-                    return;
+        }
+
+        if (isset($data['email'])) {
+            $data['email'] = InputSanitizer::sanitizeEmail($data['email']);
+            if ($data['email'] === null) {
+                $errors['email'] = 'Email must be a valid email address';
+            } else {
+                $error = Validator::validateEmail($data['email']);
+                if ($error) {
+                    $errors['email'] = $error;
                 }
-                try {
-                    Validator::email($data['email']);
-                } catch (\App\Plugins\Http\Exceptions\ValidationException $e) {
-                    $errorResponse = new BadRequest(["error" => "Invalid email format."]);
-                    $errorResponse->send();
-                    return;
-                }
+                
             }
-            if (isset($data['facilityIds'])) {
-                if (!is_array($data['facilityIds'])) {
-                    $errorResponse = new BadRequest(["error" => "facilityIds must be an array."]);
-                    $errorResponse->send();
-                    return;
-                }
+        }
+
+        if (isset($data['facilityIds'])) {
+            if (!is_array($data['facilityIds'])) {
+                $errors['facilityIds'] = 'facilityIds must be an array';
+            } else {
                 $data['facilityIds'] = array_map(fn($id) => InputSanitizer::sanitizeId($id), $data['facilityIds']);
                 $data['facilityIds'] = array_filter($data['facilityIds'], fn($id) => $id !== null);
             }
-
-            $employee = $this->employeeService->updateEmployee($id, $data);
-
-            if (!$employee) {
-                $errorResponse = new NotFound(["error" => "Employee with ID $id not found."]);
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(["message" => "Employee updated successfully", "data" => $employee]);
-            $response->send();
-        } catch (\Exception $e) {
-            if (strpos($e->getMessage(), 'already in use') !== false) {
-                $errorResponse = new BadRequest(["error" => $e->getMessage()]);
-                $errorResponse->send();
-                return;
-            }
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
-            $errorResponse->send();
         }
+
+        // Throw all validation errors
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Update employee
+        $employee = $this->employeeService->updateEmployee($id, $data);
+
+        if (!$employee) {
+            throw new NotFound('', 'Employee', (string)$id);
+        }
+
+        $response = new Ok([
+            "message" => "Employee updated successfully", 
+            "data" => $employee
+        ]);
+        $response->send();
     }
 
     /**
      * Delete an employee.
-     * Sends a 200 OK response if the employee is deleted successfully.
-     * Sends a 404 Not Found response if the employee does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
      */
     public function deleteEmployee(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid employee ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
+        $errors = [];
 
-            $success = $this->employeeService->deleteEmployee($id);
-
-            if (!$success) {
-                $errorResponse = new NotFound(["error" => "Employee with ID $id not found."]);
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(["message" => "Employee deleted successfully"]);
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]);
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        $success = $this->employeeService->deleteEmployee($id);
+
+        if (!$success) {
+            throw new NotFound('', 'Employee', (string)$id);
+        }
+
+        $response = new Ok(["message" => "Employee deleted successfully"]);
+        $response->send();
     }
 }

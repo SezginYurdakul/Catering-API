@@ -1,14 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Location;
 use App\Repositories\LocationRepository;
 use App\Helpers\PaginationHelper;
+use App\Domain\Exceptions\DatabaseException;
+use App\Domain\Exceptions\ResourceInUseException;
 
 class LocationService implements ILocationService
 {
-    private $locationRepository;
+    private LocationRepository $locationRepository;
 
     public function __construct(LocationRepository $locationRepository)
     {
@@ -17,11 +21,8 @@ class LocationService implements ILocationService
 
     /**
      * Get all locations with pagination.
-     *
-     * @param int $page
-     * @param int $perPage
-     * @return array
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function getAllLocations(int $page, int $perPage): array
     {
@@ -47,25 +48,24 @@ class LocationService implements ILocationService
                 'locations' => $locations,
                 'pagination' => $pagination
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve locations: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Locations', $e->getMessage());
         }
     }
 
     /**
      * Get a location by ID.
-     *
-     * @param int $id
-     * @return Location
-     * @throws \Exception
+     * Returns null if location not found.
+     * 
+     * @throws DatabaseException If database operation fails
      */
-    public function getLocationById(int $id): Location
+    public function getLocationById(int $id): ?Location
     {
         try {
             $locationData = $this->locationRepository->getLocationById($id);
 
             if (!$locationData) {
-                throw new \Exception("Location with ID $id does not exist.");
+                return null;
             }
 
             return new Location(
@@ -76,17 +76,15 @@ class LocationService implements ILocationService
                 $locationData['country_code'],
                 $locationData['phone_number']
             );
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve location with ID $id: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Locations', $e->getMessage(), ['id' => $id]);
         }
     }
 
     /**
      * Create a new location.
-     *
-     * @param Location $location
-     * @return array
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function createLocation(Location $location): array
     {
@@ -101,6 +99,10 @@ class LocationService implements ILocationService
 
             $lastLocationId = $this->locationRepository->createLocation($data);
 
+            if (!$lastLocationId) {
+                throw new DatabaseException('INSERT', 'Locations', 'Failed to retrieve location ID');
+            }
+
             $locationObject = new Location(
                 (int) $lastLocationId,
                 $location->city,
@@ -114,22 +116,22 @@ class LocationService implements ILocationService
                 "message" => "Location with ID: '{$lastLocationId}' successfully created.",
                 "location" => $locationObject
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to create location: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('INSERT', 'Locations', $e->getMessage(), [
+                'city' => $location->city,
+                'country_code' => $location->country_code
+            ]);
         }
     }
 
     /**
      * Update a location.
-     *
-     * @param Location $location
-     * @return array
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function updateLocation(Location $location): array
     {
         try {
-            // Data validation - all fields should be provided
             $fields = [
                 'city' => $location->city,
                 'address' => $location->address,
@@ -142,72 +144,92 @@ class LocationService implements ILocationService
             $fields = array_filter($fields, fn($value) => !is_null($value) && $value !== '');
 
             if (empty($fields)) {
-                throw new \Exception("No valid fields provided for update.");
+                throw new DatabaseException('UPDATE', 'Locations', 'No valid fields provided for update', [
+                    'id' => $location->id
+                ]);
             }
 
-            $this->locationRepository->updateLocation($location->id, $fields);
+            $result = $this->locationRepository->updateLocation($location->id, $fields);
+
+            if (!$result) {
+                throw new DatabaseException('UPDATE', 'Locations', 'Update operation returned false', [
+                    'id' => $location->id
+                ]);
+            }
 
             return [
                 "message" => "Location with ID {$location->id} successfully updated.",
                 "location" => $location
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to update location with ID {$location->id}: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('UPDATE', 'Locations', $e->getMessage(), [
+                'id' => $location->id
+            ]);
         }
     }
 
     /**
      * Delete a location.
-     *
-     * @param int $id
-     * @return string
-     * @throws \Exception
+     * 
+     * @throws ResourceInUseException If location is used by facilities
+     * @throws DatabaseException If database operation fails
      */
     public function deleteLocation(int $id): string
     {
         try {
+            // Business rule: Cannot delete location if used by facilities
             if ($this->locationRepository->isLocationUsedByFacilities($id)) {
-                throw new \InvalidArgumentException("Location with ID $id cannot be deleted because it is associated with one or more facilities.");
+                throw new ResourceInUseException(
+                    'Location',
+                    $id,
+                    'one or more facilities'
+                );
             }
 
-            $this->locationRepository->deleteLocation($id);
+            $result = $this->locationRepository->deleteLocation($id);
+
+            if (!$result) {
+                throw new DatabaseException('DELETE', 'Locations', 'Delete operation returned false', [
+                    'id' => $id
+                ]);
+            }
 
             return "Location with ID {$id} successfully deleted.";
-        } catch (\InvalidArgumentException $e) {
-            throw $e; // Re-throw specific exception
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to delete location with ID $id: " . $e->getMessage());
+        } catch (ResourceInUseException $e) {
+            // Re-throw domain exceptions
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DatabaseException('DELETE', 'Locations', $e->getMessage(), ['id' => $id]);
         }
     }
 
     /**
      * Check if a location is used by facilities.
-     *
-     * @param int $locationId
-     * @return bool
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function isLocationUsedByFacilities(int $locationId): bool
     {
         try {
             return $this->locationRepository->isLocationUsedByFacilities($locationId);
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to check if location with ID $locationId is used by facilities: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Facilities', 'Failed to check location usage', [
+                'location_id' => $locationId
+            ]);
         }
     }
 
     /**
      * Get the total count of locations.
-     *
-     * @return int
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function getTotalLocationsCount(): int
     {
         try {
             return $this->locationRepository->getTotalLocationsCount();
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve the total count of locations: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Locations', 'Failed to count locations');
         }
     }
 }

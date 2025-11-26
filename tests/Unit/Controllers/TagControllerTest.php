@@ -9,6 +9,10 @@ use App\Controllers\TagController;
 use App\Services\ITagService;
 use App\Plugins\Di\Factory;
 use App\Models\Tag;
+use App\Domain\Exceptions\DuplicateResourceException;
+use App\Domain\Exceptions\ResourceInUseException;
+use App\Domain\Exceptions\DatabaseException;
+use App\Plugins\Http\Exceptions\ValidationException;
 
 class TagControllerTest extends TestCase
 {
@@ -20,7 +24,7 @@ class TagControllerTest extends TestCase
         // Mock the Dependency Injection container
         $this->mockDi = $this->createMock(Factory::class);
         $this->mockTagService = $this->createMock(ITagService::class);
-        
+
         $this->mockDi
             ->method('getShared')
             ->with('tagService')
@@ -37,7 +41,7 @@ class TagControllerTest extends TestCase
         $_GET = [];
         $_SERVER = [];
         $_SESSION = [];
-        
+
         // Clean output buffer if any
         if (ob_get_level()) {
             ob_clean();
@@ -98,26 +102,18 @@ class TagControllerTest extends TestCase
             ->expects($this->once())
             ->method('getTagById')
             ->with($tagId)
-            ->willThrowException(new \Exception('Tag not found'));
+            ->willReturn(null); // Service now returns null instead of throwing
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Tag not found');
+        $result = $this->mockTagService->getTagById($tagId);
 
-        $this->mockTagService->getTagById($tagId);
+        $this->assertNull($result);
     }
 
     public function testCreateTagSuccess(): void
     {
-        $mockJsonData = [
-            'name' => 'New Tag'
-        ];
-
         $mockCreatedTag = [
-            'message' => 'Tag created successfully',
-            'tag' => [
-                'id' => 10,
-                'name' => 'New Tag'
-            ]
+            'message' => "Tag 'New Tag' successfully created.",
+            'tag' => new Tag(10, 'New Tag')
         ];
 
         $this->mockTagService
@@ -129,7 +125,8 @@ class TagControllerTest extends TestCase
 
         $this->assertArrayHasKey('message', $result);
         $this->assertArrayHasKey('tag', $result);
-        $this->assertEquals('Tag created successfully', $result['message']);
+        $this->assertInstanceOf(Tag::class, $result['tag']);
+        $this->assertStringContainsString('successfully created', $result['message']);
     }
 
     public function testCreateTagEmptyName(): void
@@ -150,10 +147,10 @@ class TagControllerTest extends TestCase
         $this->mockTagService
             ->expects($this->once())
             ->method('createTag')
-            ->willThrowException(new \Exception('Tag with this name already exists'));
+            ->willThrowException(new DuplicateResourceException('Tag', 'name', $duplicateTagName));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Tag with this name already exists');
+        $this->expectException(DuplicateResourceException::class);
+        $this->expectExceptionMessage("Tag with name 'Conference' already exists");
 
         $this->mockTagService->createTag(new Tag(0, $duplicateTagName));
     }
@@ -161,16 +158,10 @@ class TagControllerTest extends TestCase
     public function testUpdateTagSuccess(): void
     {
         $tagId = 1;
-        $mockUpdateData = [
-            'name' => 'Updated Tag Name'
-        ];
 
         $mockUpdatedTag = [
-            'message' => 'Tag updated successfully',
-            'tag' => [
-                'id' => $tagId,
-                'name' => 'Updated Tag Name'
-            ]
+            'message' => "Tag 'Updated Tag Name' successfully updated.",
+            'tag' => new Tag($tagId, 'Updated Tag Name')
         ];
 
         $this->mockTagService
@@ -181,7 +172,9 @@ class TagControllerTest extends TestCase
         $result = $this->mockTagService->updateTag(new Tag($tagId, 'Updated Tag Name'));
 
         $this->assertArrayHasKey('message', $result);
-        $this->assertEquals('Tag updated successfully', $result['message']);
+        $this->assertArrayHasKey('tag', $result);
+        $this->assertInstanceOf(Tag::class, $result['tag']);
+        $this->assertStringContainsString('successfully updated', $result['message']);
     }
 
     public function testUpdateTagNotFound(): void
@@ -190,13 +183,13 @@ class TagControllerTest extends TestCase
 
         $this->mockTagService
             ->expects($this->once())
-            ->method('updateTag')
-            ->willThrowException(new \Exception('Tag not found'));
+            ->method('getTagById')
+            ->with($tagId)
+            ->willReturn(null); // Service returns null for non-existent tag
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Tag not found');
+        $result = $this->mockTagService->getTagById($tagId);
 
-        $this->mockTagService->updateTag(new Tag($tagId, 'Non-existent Tag'));
+        $this->assertNull($result);
     }
 
     public function testDeleteTagSuccess(): void
@@ -218,18 +211,16 @@ class TagControllerTest extends TestCase
     public function testDeleteTagNotFound(): void
     {
         $tagId = 999;
-        $nonExistentTag = new Tag($tagId, 'Non-existent Tag');
 
         $this->mockTagService
             ->expects($this->once())
-            ->method('deleteTag')
-            ->with($this->isInstanceOf(Tag::class))
-            ->willThrowException(new \Exception('Tag not found'));
+            ->method('getTagById')
+            ->with($tagId)
+            ->willReturn(null); // Service returns null for non-existent tag
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Tag not found');
+        $result = $this->mockTagService->getTagById($tagId);
 
-        $this->mockTagService->deleteTag($nonExistentTag);
+        $this->assertNull($result);
     }
 
     public function testDeleteTagUsedByFacilities(): void
@@ -241,10 +232,10 @@ class TagControllerTest extends TestCase
             ->expects($this->once())
             ->method('deleteTag')
             ->with($this->isInstanceOf(Tag::class))
-            ->willThrowException(new \Exception('Cannot delete tag: it is associated with facilities'));
+            ->willThrowException(new ResourceInUseException('Tag', $tagId, 'one or more facilities'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Cannot delete tag');
+        $this->expectException(ResourceInUseException::class);
+        $this->expectExceptionMessage("Tag with ID '1' cannot be deleted because it is in use by one or more facilities");
 
         $this->mockTagService->deleteTag($tagInUse);
     }
@@ -298,13 +289,13 @@ class TagControllerTest extends TestCase
 
     public function testErrorHandlingForServiceExceptions(): void
     {
-        // Test exception propagation from service layer
+        // Test exception propagation from service layer - using DatabaseException
         $this->mockTagService
             ->method('getAllTags')
-            ->willThrowException(new \Exception('Database connection failed'));
+            ->willThrowException(new DatabaseException('SELECT', 'Tags', 'Connection failed'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Database connection failed');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: SELECT on Tags - Connection failed');
 
         $this->mockTagService->getAllTags(1, 10);
     }

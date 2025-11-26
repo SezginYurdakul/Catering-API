@@ -49,4 +49,14 @@ interface IEmployeeService
      * @return bool
      */
     public function deleteEmployee(int $id): bool;
+
+    /**
+     * Check if an employee email is unique.
+     */
+    public function isEmailUnique(string $email): bool;
+
+    /**
+     * Check if an employee email is unique for update (excluding a specific ID).
+     */
+    public function isEmailUniqueForUpdate(string $email, int $excludeId): bool;
 }

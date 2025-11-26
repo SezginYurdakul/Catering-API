@@ -8,20 +8,15 @@ use App\Services\ITagService;
 use App\Models\Tag;
 use App\Plugins\Http\Response\Ok;
 use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NoContent;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
+use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Http\Exceptions\NotFound;
 use App\Helpers\InputSanitizer;
+use App\Helpers\Validator;
 
 class TagController extends BaseController
 {
     private ITagService $tagService;
 
-    /**
-     * Constructor to initialize the TagService from the DI container.
-     * Authenticates the user with the AuthMiddleware.
-     */
     public function __construct()
     {
         parent::__construct();
@@ -30,224 +25,176 @@ class TagController extends BaseController
     }
 
     /**
-     * Get all tags.
-     * Sends a 200 OK response with the list of tags.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @return void
+     * Get all tags with pagination.
      */
     public function getAllTags(): void
     {
-        try {
-            // Get and sanitize pagination parameters
-            $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
-            $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
+        $errors = [];
 
-            // Validate pagination parameters
-            if ($page === null || $perPage === null || $page <= 0 || $perPage <= 0) {
-                $errorResponse = new BadRequest([
-                    "error" => "Invalid pagination parameters. 'page' and 'per_page' must be positive integers."
-                ]);
-                $errorResponse->send();
-                return;
-            }
-            // Fetch all tags with pagination
-            $tags = $this->tagService->getAllTags($page, $perPage);
+        // Pagination validation
+        $errors = array_merge($errors, Validator::validatePagination($_GET));
 
-            // Check if the requested page exceeds the total number of pages
-            $totalItems = $tags['pagination']['total_items'];
-            $totalPages = (int) ceil($totalItems / $perPage);
-            if ($totalPages>0 && $page > $totalPages) {
-                $errorResponse = new BadRequest([
-                    "error" => "The requested page ($page) exceeds the total number of pages ($totalPages)."
-                ]);
-                $errorResponse->send();
-                return;
-            }
-
-
-            $response = new Ok($tags); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
+
+        $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
+
+        // Get tags
+        $tags = $this->tagService->getAllTags($page, $perPage);
+
+        // Validate page limit
+        $totalItems = $tags['pagination']['total_items'];
+        $totalPages = (int) ceil($totalItems / $perPage);
+        
+        if ($totalPages > 0 && $page > $totalPages) {
+            throw new ValidationException([
+                'page' => "The requested page ($page) exceeds the total number of pages ($totalPages)."
+            ]);
+        }
+
+        $response = new Ok($tags);
+        $response->send();
     }
 
     /**
      * Get a specific tag by its ID.
-     * Sends a 200 OK response if the tag is found.
-     * Sends a 404 Not Found response if the tag does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
      */
     public function getTagById(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
-            $tag = $this->tagService->getTagById($id);
+        $errors = [];
 
-            if (!$tag) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(['tag' => $tag]); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        $tag = $this->tagService->getTagById($id);
+
+        if (!$tag) {
+            throw new NotFound('', 'Tag', (string)$id);
+        }
+
+        $response = new Ok(['tag' => $tag]);
+        $response->send();
     }
 
     /**
      * Create a new tag.
-     * Sends a 201 Created response with the created tag.
-     * Sends a 400 Bad Request response if required fields are missing.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @return void
      */
     public function createTag(): void
     {
-        try {
-            $tagData = json_decode(file_get_contents('php://input'), true);
+        $data = json_decode(file_get_contents('php://input'), true);
+        $errors = [];
 
-            // Sanitize client data
-            $sanitizedData = InputSanitizer::sanitize([
-                'name' => $tagData['name']
-            ]);
+        // Validate required fields
+        $errors = array_merge($errors, Validator::validateRequired($data, ['name']));
 
-            // Validate tag name
-            if (empty(trim($sanitizedData['name']))) {
-                throw new \Exception("Tag name cannot be empty or whitespace.");
-            }
-
-            if (empty($sanitizedData['name'])) {
-                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to create the tag"]); // 400 Bad Request
-                $errorResponse->send();
-                return;
-            }
-
-            $tag = new Tag(0, $sanitizedData['name']);
-            $result = $this->tagService->createTag($tag);
-
-            $response = new Created($result); // 201 Created response
-            $response->send();
-        } catch (\Exception $e) {
-            $msg = $e->getMessage();
-            if ($msg === 'A tag with this name already exists.' || (strpos($msg, 'Tag name') !== false && strpos($msg, 'already exists') !== false)) {
-                // 400 Bad Request for duplicate tag name
-                $errorResponse = new BadRequest(["error" => $msg]);
-                $errorResponse->send();
-                return;
-            }
-            $errorResponse = new InternalServerError(["error" => $msg . "No change was made"]); // 500 Internal Server Error
-            $errorResponse->send();
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
+
+        // Sanitize
+        $data = InputSanitizer::sanitize($data);
+
+        // Validate tag name
+        if (empty(trim($data['name']))) {
+            $errors['name'] = 'Tag name cannot be empty or whitespace';
+        }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Create tag (service will check for duplicates)
+        $tag = new Tag(0, $data['name']);
+        $result = $this->tagService->createTag($tag);
+
+        $response = new Created($result);
+        $response->send();
     }
 
     /**
      * Update an existing tag by its ID.
-     * Sends a 200 OK response with the updated tag.
-     * Sends a 400 Bad Request response if required fields are missing.
-     * Sends a 404 Not Found response if the tag does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
      */
     public function updateTag(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
-            $data = json_decode(file_get_contents('php://input'), true);
-            // Sanitize client data
-            $sanitizedData = InputSanitizer::sanitize([
-                'name' => $data['name']
-            ]);
+        $errors = [];
 
-            if (empty($sanitizedData['name'])) {
-                $errorResponse = new BadRequest(["error" => "Tag name is required.Failed to update the tag"]); // 400 Bad Request
-                $errorResponse->send();
-                return;
-            }
-
-            $tag = new Tag($id, $sanitizedData['name']);
-            $result = $this->tagService->updateTag($tag);
-
-            if (!$result) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok($result); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $msg = $e->getMessage();
-            if ($msg === 'A tag with this name already exists.' || (strpos($msg, 'Tag name') !== false && strpos($msg, 'already exists') !== false)) {
-                // 400 Bad Request for duplicate tag name
-                $errorResponse = new BadRequest(["error" => $msg]);
-                $errorResponse->send();
-                return;
-            }
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            throw new ValidationException(['id' => $error]);
         }
+
+        // Check if tag exists
+        $existingTag = $this->tagService->getTagById($id);
+        if (!$existingTag) {
+            throw new NotFound('', 'Tag', (string)$id);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // Validate required fields
+        $errors = array_merge($errors, Validator::validateRequired($data, ['name']));
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Sanitize
+        $data = InputSanitizer::sanitize($data);
+
+        // Validate tag name
+        if (empty(trim($data['name']))) {
+            $errors['name'] = 'Tag name cannot be empty or whitespace';
+        }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Update tag (service will check for duplicates)
+        $tag = new Tag($id, $data['name']);
+        $result = $this->tagService->updateTag($tag);
+
+        $response = new Ok($result);
+        $response->send();
     }
 
     /**
      * Delete a tag by its ID.
-     * Sends a 204 No Content response if the tag is successfully deleted.
-     * Sends a 404 Not Found response if the tag does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     *
-     * @param int $id
-     * @return void
      */
     public function deleteTag(int $id): void
     {
-        try {
-            // Sanitize the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid tag ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
+        $errors = [];
 
-            // Fetch the tag to check if it exists
-            $tag = $this->tagService->getTagById($id);
-
-            if (!$tag) {
-                $errorResponse = new NotFound(["error" => "Tag with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $result = $this->tagService->deleteTag($tag);
-
-            $response = new Ok(['message' => 'Tag deleted successfully']); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Check if tag exists
+        $tag = $this->tagService->getTagById($id);
+        if (!$tag) {
+            throw new NotFound('', 'Tag', (string)$id);
+        }
+
+        // Delete tag (service will check if in use)
+        $this->tagService->deleteTag($tag);
+
+        $response = new Ok(['message' => 'Tag deleted successfully']);
+        $response->send();
     }
 }

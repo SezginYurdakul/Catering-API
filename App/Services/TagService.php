@@ -7,10 +7,13 @@ namespace App\Services;
 use App\Models\Tag;
 use App\Repositories\TagRepository;
 use App\Helpers\PaginationHelper;
+use App\Domain\Exceptions\DuplicateResourceException;
+use App\Domain\Exceptions\ResourceInUseException;
+use App\Domain\Exceptions\DatabaseException;
 
 class TagService implements ITagService
 {
-    private $tagRepository;
+    private TagRepository $tagRepository;
 
     public function __construct(TagRepository $tagRepository)
     {
@@ -19,11 +22,8 @@ class TagService implements ITagService
 
     /**
      * Get all tags with pagination.
-     *
-     * @param int $page The current page number.
-     * @param int $perPage The number of items per page.
-     * @return array An array containing the tags and pagination information.
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function getAllTags(int $page, int $perPage): array
     {
@@ -42,39 +42,35 @@ class TagService implements ITagService
                 'tags' => $tags,
                 'pagination' => $pagination
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve tags: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Tags', $e->getMessage());
         }
     }
 
     /**
      * Get a tag by its ID.
-     *
-     * @param int $id The ID of the tag.
-     * @return Tag The tag object.
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
-    public function getTagById(int $id): Tag
+    public function getTagById(int $id): ?Tag
     {
         try {
             $tagData = $this->tagRepository->getTagById($id);
 
             if (!$tagData) {
-                throw new \Exception("Tag with ID $id does not exist.");
+                return null;
             }
 
             return new Tag($tagData['id'], $tagData['name']);
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve tag with ID $id: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Tags', $e->getMessage(), ['id' => $id]);
         }
     }
 
     /**
      * Get tags by facility ID.
-     *
-     * @param int $facilityId The ID of the facility.
-     * @return array
-     * @throws \Exception
+     * 
+     * @throws DatabaseException If database operation fails
      */
     public function getTagsByFacilityId(int $facilityId): array
     {
@@ -84,81 +80,117 @@ class TagService implements ITagService
             return array_map(function ($tagData) {
                 return new Tag($tagData['id'], $tagData['name']);
             }, $tagsData);
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to retrieve tags for facility with ID $facilityId: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Tags', $e->getMessage(), [
+                'facility_id' => $facilityId
+            ]);
         }
     }
 
     /**
      * Create a new tag.
-     *
-     * @param \App\Models\Tag $tag
-     * @return array{message: string, tag: Tag}
-     * @throws \Exception
+     * 
+     * @throws DuplicateResourceException If tag name already exists
+     * @throws DatabaseException If database operation fails
      */
     public function createTag(Tag $tag): array
     {
         try {
+            // Business rule: Tag name must be unique
             if (!$this->tagRepository->isTagNameUnique($tag->name)) {
-                throw new \Exception("Tag name '{$tag->name}' already exists. It should be unique.");
+                throw new DuplicateResourceException('Tag', 'name', $tag->name);
             }
 
             $tagId = $this->tagRepository->createTag($tag->name);
+
+            if (!$tagId) {
+                throw new DatabaseException('INSERT', 'Tags', 'Failed to retrieve tag ID');
+            }
+
             $tagObject = new Tag($tagId, $tag->name);
 
             return [
                 "message" => "Tag '{$tag->name}' successfully created.",
                 "tag" => $tagObject
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to create tag '{$tag->name}': " . $e->getMessage());
+        } catch (DuplicateResourceException $e) {
+            // Re-throw domain exceptions
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DatabaseException('INSERT', 'Tags', $e->getMessage(), [
+                'name' => $tag->name
+            ]);
         }
     }
 
     /**
      * Update an existing tag.
-     *
-     * @param \App\Models\Tag $tag
-     * @return array{message: string, tag: Tag}
-     * @throws \Exception
+     * 
+     * @throws DuplicateResourceException If tag name already exists
+     * @throws DatabaseException If database operation fails
      */
     public function updateTag(Tag $tag): array
     {
         try {
+            // Business rule: Tag name must be unique
             if (!$this->tagRepository->isTagNameUnique($tag->name)) {
-                throw new \Exception("Tag name '{$tag->name}' already exists. It should be unique.");
+                throw new DuplicateResourceException('Tag', 'name', $tag->name);
             }
 
-            $this->tagRepository->updateTag($tag->id, $tag->name);
+            $result = $this->tagRepository->updateTag($tag->id, $tag->name);
+
+            if (!$result) {
+                throw new DatabaseException('UPDATE', 'Tags', 'Update operation returned false', [
+                    'id' => $tag->id
+                ]);
+            }
 
             return [
                 "message" => "Tag '{$tag->name}' successfully updated.",
                 "tag" => $tag
             ];
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to update tag with ID {$tag->id}: " . $e->getMessage());
+        } catch (DuplicateResourceException $e) {
+            // Re-throw domain exceptions
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DatabaseException('UPDATE', 'Tags', $e->getMessage(), [
+                'id' => $tag->id
+            ]);
         }
     }
 
     /**
      * Delete a tag.
-     *
-     * @param \App\Models\Tag $tag
-     * @return string
-     * @throws \Exception
+     * 
+     * @throws ResourceInUseException If tag is used by facilities
+     * @throws DatabaseException If database operation fails
      */
     public function deleteTag(Tag $tag): string
     {
         try {
+            // Business rule: Cannot delete tag if used by facilities
             if ($this->tagRepository->isTagUsedByFacilities($tag->id)) {
-                throw new \Exception("Tag with ID {$tag->id} is used by one or more facilities.");
+                throw new ResourceInUseException(
+                    'Tag',
+                    $tag->id,
+                    'one or more facilities'
+                );
             }
 
-            $this->tagRepository->deleteTag($tag->id);
+            $result = $this->tagRepository->deleteTag($tag->id);
+
+            if (!$result) {
+                throw new DatabaseException('DELETE', 'Tags', 'Delete operation returned false', [
+                    'id' => $tag->id
+                ]);
+            }
 
             return "Tag with ID {$tag->id} successfully deleted.";
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to delete tag with ID {$tag->id}: " . $e->getMessage());
+        } catch (ResourceInUseException $e) {
+            // Re-throw domain exceptions
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DatabaseException('DELETE', 'Tags', $e->getMessage(), ['id' => $tag->id]);
         }
     }
 }
