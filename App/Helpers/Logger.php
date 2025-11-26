@@ -31,9 +31,9 @@ class Logger
             'request_id' => $this->getRequestId(),
             'user_ip' => $this->getUserIP(),
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
-            'context' => $context
+            'context' => $this->sanitizeContext($context)
         ];
-        
+
         $logMessage = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
         // Append the log message to the log file
@@ -113,34 +113,141 @@ class Logger
      */
     public function logValidationError(array $validationErrors, string $endpoint): void
     {
+        $requestData = $_POST ?: json_decode(file_get_contents('php://input'), true) ?: [];
+
         $context = [
             'validation_errors' => $validationErrors,
             'endpoint' => $endpoint,
-            'request_data' => $_POST ?: file_get_contents('php://input')
+            'request_data' => $this->sanitizeContext($requestData)
         ];
-        
+
         $this->log('WARNING', 'Validation failed', $context);
     }
 
     /**
-     * Log an INFO message to the log file
-     * 
+     * Sanitize context data to remove sensitive information (GDPR compliance)
+     * @param array $context
+     * @return array
+     */
+    private function sanitizeContext(array $context): array
+    {
+        $sensitiveKeys = [
+            'password',
+            'password_confirmation',
+            'old_password',
+            'new_password',
+            'token',
+            'access_token',
+            'refresh_token',
+            'api_key',
+            'secret',
+            'secret_key',
+            'private_key',
+            'credit_card',
+            'card_number',
+            'cvv',
+            'ssn',
+            'social_security',
+            'pin',
+            'authorization'
+        ];
+
+        return $this->recursiveSanitize($context, $sensitiveKeys);
+    }
+
+    /**
+     * Recursively sanitize nested arrays
+     * @param mixed $data
+     * @param array $sensitiveKeys
+     * @return mixed
+     */
+    private function recursiveSanitize($data, array $sensitiveKeys)
+    {
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $sanitized = [];
+        foreach ($data as $key => $value) {
+            // Check if key contains sensitive information (case-insensitive)
+            $isSensitive = false;
+            foreach ($sensitiveKeys as $sensitiveKey) {
+                if (stripos($key, $sensitiveKey) !== false) {
+                    $isSensitive = true;
+                    break;
+                }
+            }
+
+            if ($isSensitive) {
+                $sanitized[$key] = '[REDACTED]';
+            } elseif (is_array($value)) {
+                $sanitized[$key] = $this->recursiveSanitize($value, $sensitiveKeys);
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+
+    /**
+     * Log a DEBUG message to the log file
+     *
      * @param string $message
+     * @param array $context
      * @return void
      */
-    public function info(string $message): void
+    public function debug(string $message, array $context = []): void
     {
-        $this->log('INFO', $message);
+        $this->log('DEBUG', $message, $context);
+    }
+
+    /**
+     * Log an INFO message to the log file
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    public function info(string $message, array $context = []): void
+    {
+        $this->log('INFO', $message, $context);
     }
 
     /**
      * Log a WARNING message to the log file
-     * 
+     *
      * @param string $message
+     * @param array $context
      * @return void
      */
-    public function error(string $message): void
+    public function warning(string $message, array $context = []): void
     {
-        $this->log('ERROR', $message);
+        $this->log('WARNING', $message, $context);
+    }
+
+    /**
+     * Log an ERROR message to the log file
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    public function error(string $message, array $context = []): void
+    {
+        $this->log('ERROR', $message, $context);
+    }
+
+    /**
+     * Log a CRITICAL message to the log file
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    public function critical(string $message, array $context = []): void
+    {
+        $this->log('CRITICAL', $message, $context);
     }
 }
