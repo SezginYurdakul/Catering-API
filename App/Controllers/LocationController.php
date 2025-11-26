@@ -6,22 +6,17 @@ namespace App\Controllers;
 
 use App\Services\ILocationService;
 use App\Helpers\InputSanitizer;
+use App\Helpers\Validator;
 use App\Models\Location;
 use App\Plugins\Http\Response\Ok;
 use App\Plugins\Http\Response\Created;
-use App\Plugins\Http\Response\NoContent;
-use App\Plugins\Http\Response\NotFound;
-use App\Plugins\Http\Response\BadRequest;
-use App\Plugins\Http\Response\InternalServerError;
-
+use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Http\Exceptions\NotFound;
 
 class LocationController extends BaseController
 {
     private ILocationService $locationService;
 
-    /**
-     * Constructor to initialize the LocationService from the DI container and the AuthMiddleware.
-     */
     public function __construct()
     {
         parent::__construct();
@@ -30,253 +25,234 @@ class LocationController extends BaseController
     }
 
     /**
-     * Get all locations.
-     * Sends a 200 OK response with the list of locations.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     * 
-     * @return void
+     * Get all locations with pagination.
      */
     public function getAllLocations(): void
     {
-        try {
-            // Get and validate pagination parameters using BaseController method
-            $pagination = $this->getPaginationParams();
-            $page = $pagination['page'];
-            $perPage = $pagination['per_page'];
+        $errors = [];
 
-            // Call the service method with pagination
-            $locations = $this->locationService->getAllLocations($page, $perPage);
+        // Pagination validation
+        $errors = array_merge($errors, Validator::validatePagination($_GET));
 
-            // Validate page limit using BaseController method
-            $totalItems = $locations['pagination']['total_items'];
-            $this->validatePageLimit($page, $perPage, $totalItems);
-
-            // Send the response
-            $response = new Ok($locations);
-            $response->send();
-        } catch (\Exception $e) {
-            $this->handleException($e, 'LocationController::getAllLocations');
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
+
+        $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
+
+        // Get locations
+        $locations = $this->locationService->getAllLocations($page, $perPage);
+
+        // Validate page limit
+        $totalItems = $locations['pagination']['total_items'];
+        $totalPages = (int) ceil($totalItems / $perPage);
+        
+        if ($totalPages > 0 && $page > $totalPages) {
+            throw new ValidationException([
+                'page' => "The requested page ($page) exceeds the total number of pages ($totalPages)."
+            ]);
+        }
+
+        $response = new Ok($locations);
+        $response->send();
     }
 
     /**
      * Get a specific location by its ID.
-     * Sends a 200 OK response if the location is found.
-     * Sends a 404 Not Found response if the location does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     * 
-     * @param int $id
-     * @return void
      */
     public function getLocationById($id): void
     {
-        try {
-            // Validate ID using BaseController method
-            $validId = $this->validateId($id, 'location ID');
+        $errors = [];
 
-            // Fetch the location by ID
-            $location = $this->locationService->getLocationById($validId);
-
-            if (!$location) {
-                $errorResponse = new NotFound(["error" => "Location with ID $validId not found."]);
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(["location" => $location]);
-            $response->send();
-        } catch (\Exception $e) {
-            $this->handleException($e, 'LocationController::getLocationById');
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        $location = $this->locationService->getLocationById((int)$id);
+
+        if (!$location) {
+            throw new NotFound('', 'Location', (string)$id);
+        }
+
+        $response = new Ok(["location" => $location]);
+        $response->send();
     }
 
     /**
      * Create a new location.
-     * Sends a 201 Created response with the created location.
-     * Sends a 400 Bad Request response if required fields are missing.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     * 
-     * @return void
      */
     public function createLocation(): void
     {
-        try {
-            // Get JSON input using BaseController method
-            $data = $this->getJsonInput();
+        $data = json_decode(file_get_contents('php://input'), true);
+        $errors = [];
 
-            $requiredFields = [
-                'city' => 'sanitizeAddress',
-                'address' => 'sanitizeAddress',
-                'zip_code' => 'sanitizeAddress',
-                'country_code' => 'sanitizeAddress',
-                'phone_number' => 'sanitizePhone'
-            ];
+        // Validate required fields
+        $requiredFields = ['city', 'address', 'zip_code', 'country_code', 'phone_number'];
+        $errors = array_merge($errors, Validator::validateRequired($data, $requiredFields));
 
-            $sanitizedData = [];
-
-            foreach ($requiredFields as $field => $sanitizeMethod) {
-                if (empty($data[$field])) {
-                    $errorResponse = new BadRequest(["error" => "Field '$field' is required.You may type incorrectly."]); // 400 Bad Request
-                    $errorResponse->send();
-                    return;
-                }
-
-                $sanitizedValue = InputSanitizer::$sanitizeMethod($data[$field]);
-
-                if ($sanitizedValue === null) {
-                    $errorResponse = new BadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
-                    $errorResponse->send();
-                    return;
-                }
-
-                $sanitizedData[$field] = $sanitizedValue;
-            }
-
-            // Create a new Location object
-            $location = new Location(
-                0,
-                $sanitizedData['city'],
-                $sanitizedData['address'],
-                $sanitizedData['zip_code'],
-                $sanitizedData['country_code'],
-                $sanitizedData['phone_number']
-            );
-
-            $result = $this->locationService->createLocation($location);
-            $response = new Created($result); // 201 Created response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
         }
+
+        // Sanitize fields
+        $data['city'] = InputSanitizer::sanitizeAddress($data['city']);
+        $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+        $data['zip_code'] = InputSanitizer::sanitizeAddress($data['zip_code']);
+        $data['country_code'] = InputSanitizer::sanitizeAddress($data['country_code']);
+        $data['phone_number'] = InputSanitizer::sanitizePhone($data['phone_number']);
+
+        // Validate sanitized fields
+        foreach (['city', 'address', 'zip_code', 'country_code'] as $field) {
+            if ($data[$field] === null || empty(trim($data[$field]))) {
+                $errors[$field] = ucfirst($field) . ' cannot be empty';
+            }
+        }
+
+        if ($data['phone_number'] === null) {
+            $errors['phone_number'] = 'Invalid phone number format';
+        }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Create location
+        $location = new Location(
+            0,
+            $data['city'],
+            $data['address'],
+            $data['zip_code'],
+            $data['country_code'],
+            $data['phone_number']
+        );
+
+        $result = $this->locationService->createLocation($location);
+
+        $response = new Created($result);
+        $response->send();
     }
 
     /**
      * Update an existing location by its ID.
-     * Sends a 200 OK response with the updated location.
-     * Sends a 400 Bad Request response if required fields are missing.
-     * Sends a 404 Not Found response if the location does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     * 
-     * @param int $id
-     * @return void
      */
     public function updateLocation($id): void
     {
-        try {
-            // Sanitize and validate the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
+        $errors = [];
 
-            $data = json_decode(file_get_contents('php://input'), true);
-
-            // Sanitize client data
-            $fieldsToSanitize = [
-                'city' => 'sanitizeAddress',
-                'address' => 'sanitizeAddress',
-                'zip_code' => 'sanitizeAddress',
-                'country_code' => 'sanitizeAddress',
-                'phone_number' => 'sanitizePhone'
-            ];
-            $sanitizedData = [];
-
-            foreach ($fieldsToSanitize as $field => $sanitizeMethod) {
-                if (isset($data[$field])) { // Check if the field is present in the request
-                    $sanitizedValue = InputSanitizer::$sanitizeMethod($data[$field]);
-
-                    if ($sanitizedValue === null) {
-                        $errorResponse = new BadRequest(["error" => "Invalid $field. Please provide a valid $field."]);
-                        $errorResponse->send();
-                        return;
-                    }
-
-                    $sanitizedData[$field] = $sanitizedValue;
-                }
-            }
-
-            // Check if at least one field is provided
-            if (
-                empty($sanitizedData['city']) && empty($sanitizedData['address']) && empty($sanitizedData['zip_code']) &&
-                empty($sanitizedData['country_code']) && empty($sanitizedData['phone_number'])
-            ) {
-                $errorResponse = new BadRequest(["error" => "At least one field is required to update the location."]); // 400 Bad Request
-                $errorResponse->send();
-                return;
-            }
-
-            // Fetch the existing location to pass not updated fields
-            $existingLocation = $this->locationService->getLocationById((int) $id);
-            if (!$existingLocation) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $location = new Location(
-                (int) $id,
-                $sanitizedData['city'] ?? $existingLocation->city,
-                $sanitizedData['address'] ?? $existingLocation->address,
-                $sanitizedData['zip_code'] ?? $existingLocation->zip_code,
-                $sanitizedData['country_code'] ?? $existingLocation->country_code,
-                $sanitizedData['phone_number'] ?? $existingLocation->phone_number
-            );
-
-            $result = $this->locationService->updateLocation($location);
-
-            if (!$result) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok($result); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage()]); // 500 Internal Server Error
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            throw new ValidationException(['id' => $error]);
         }
+
+        // Get existing location
+        $existingLocation = $this->locationService->getLocationById((int)$id);
+        if (!$existingLocation) {
+            throw new NotFound('', 'Location', (string)$id);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        // Check if at least one field provided
+        $updatableFields = ['city', 'address', 'zip_code', 'country_code', 'phone_number'];
+        $providedFields = array_intersect($updatableFields, array_keys($data));
+        
+        if (empty($providedFields)) {
+            throw new ValidationException([
+                'fields' => 'At least one field (city, address, zip_code, country_code, phone_number) must be provided'
+            ]);
+        }
+
+        // Sanitize provided fields
+        if (isset($data['city'])) {
+            $data['city'] = InputSanitizer::sanitizeAddress($data['city']);
+            if ($data['city'] === null || empty(trim($data['city']))) {
+                $errors['city'] = 'City cannot be empty';
+            }
+        }
+
+        if (isset($data['address'])) {
+            $data['address'] = InputSanitizer::sanitizeAddress($data['address']);
+            if ($data['address'] === null || empty(trim($data['address']))) {
+                $errors['address'] = 'Address cannot be empty';
+            }
+        }
+
+        if (isset($data['zip_code'])) {
+            $data['zip_code'] = InputSanitizer::sanitizeAddress($data['zip_code']);
+            if ($data['zip_code'] === null || empty(trim($data['zip_code']))) {
+                $errors['zip_code'] = 'Zip code cannot be empty';
+            }
+        }
+
+        if (isset($data['country_code'])) {
+            $data['country_code'] = InputSanitizer::sanitizeAddress($data['country_code']);
+            if ($data['country_code'] === null || empty(trim($data['country_code']))) {
+                $errors['country_code'] = 'Country code cannot be empty';
+            }
+        }
+
+        if (isset($data['phone_number'])) {
+            $data['phone_number'] = InputSanitizer::sanitizePhone($data['phone_number']);
+            if ($data['phone_number'] === null) {
+                $errors['phone_number'] = 'Invalid phone number format';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Create updated location object
+        $location = new Location(
+            (int)$id,
+            $data['city'] ?? $existingLocation->city,
+            $data['address'] ?? $existingLocation->address,
+            $data['zip_code'] ?? $existingLocation->zip_code,
+            $data['country_code'] ?? $existingLocation->country_code,
+            $data['phone_number'] ?? $existingLocation->phone_number
+        );
+
+        $result = $this->locationService->updateLocation($location);
+
+        $response = new Ok($result);
+        $response->send();
     }
 
     /**
      * Delete a location by its ID.
-     * Sends a 204 No Content response if the location is successfully deleted.
-     * Sends a 404 Not Found response if the location does not exist.
-     * Sends a 500 Internal Server Error response in case of an exception.
-     * 
-     * @param int $id
-     * @return void
      */
     public function deleteLocation($id): void
     {
-        try {
+        $errors = [];
 
-            // Sanitize and validate the ID
-            $id = InputSanitizer::sanitizeId($id);
-            if ($id === null) {
-                $errorResponse = new BadRequest(["error" => "Invalid location ID. It must be a positive integer."]);
-                $errorResponse->send();
-                return;
-            }
-
-            // Fetch the location to check if it exists
-            $existingLocation = $this->locationService->getLocationById($id);
-            $result = $this->locationService->deleteLocation($id);
-
-            if (!$result) {
-                $errorResponse = new NotFound(["error" => "Location with ID $id not found."]); // 404 Not Found
-                $errorResponse->send();
-                return;
-            }
-
-            $response = new Ok(['message' => 'Location deleted successfully']); // 200 OK response
-            $response->send();
-        } catch (\Exception $e) {
-            $errorResponse = new InternalServerError(["error" => $e->getMessage() . "No change was made"]); // 500 Internal Server Error
-            $errorResponse->send();
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            $errors['id'] = $error;
         }
+
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        // Check if location exists
+        $existingLocation = $this->locationService->getLocationById((int)$id);
+        if (!$existingLocation) {
+            throw new NotFound('', 'Location', (string)$id);
+        }
+
+        // Delete location (service will check if in use)
+        $this->locationService->deleteLocation((int)$id);
+
+        $response = new Ok(['message' => 'Location deleted successfully']);
+        $response->send();
     }
 }
