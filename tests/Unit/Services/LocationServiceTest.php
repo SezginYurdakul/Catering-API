@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 use App\Services\LocationService;
 use App\Repositories\LocationRepository;
 use App\Models\Location;
+use App\Domain\Exceptions\ResourceInUseException;
+use App\Domain\Exceptions\DatabaseException;
 
 class LocationServiceTest extends TestCase
 {
@@ -162,10 +164,9 @@ class LocationServiceTest extends TestCase
             ->with(999)
             ->willReturn(null);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to retrieve location with ID 999: Location with ID 999 does not exist.');
+        $result = $this->locationService->getLocationById(999);
 
-        $this->locationService->getLocationById(999);
+        $this->assertNull($result);
     }
 
     public function testCreateLocationSuccess(): void
@@ -219,7 +220,7 @@ class LocationServiceTest extends TestCase
         $this->assertEquals('Location with ID 1 successfully updated.', $result['message']);
     }
 
-    public function testUpdateLocationNotFound(): void
+    public function testUpdateLocationFailure(): void
     {
         $location = new Location(999, 'Non-existent City', 'Some Address', '0000 XX', 'XX', '+00-00-0000000');
 
@@ -233,10 +234,10 @@ class LocationServiceTest extends TestCase
                 'country_code' => 'XX',
                 'phone_number' => '+00-00-0000000'
             ])
-            ->willThrowException(new \Exception('Location with ID 999 not found'));
+            ->willReturn(0); // No rows affected
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to update location with ID 999: Location with ID 999 not found');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: UPDATE on Locations');
 
         $this->locationService->updateLocation($location);
     }
@@ -263,7 +264,7 @@ class LocationServiceTest extends TestCase
         $this->assertEquals('Location with ID 1 successfully deleted.', $result);
     }
 
-    public function testDeleteLocationNotFound(): void
+    public function testDeleteLocationFailure(): void
     {
         $locationId = 999;
 
@@ -277,10 +278,10 @@ class LocationServiceTest extends TestCase
             ->expects($this->once())
             ->method('deleteLocation')
             ->with($locationId)
-            ->willThrowException(new \Exception('Location with ID 999 not found'));
+            ->willReturn(false); // Delete failed
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to delete location with ID 999: Location with ID 999 not found');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: DELETE on Locations');
 
         $this->locationService->deleteLocation($locationId);
     }
@@ -296,8 +297,8 @@ class LocationServiceTest extends TestCase
             ->with($locationId)
             ->willReturn(true);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Location with ID 1 cannot be deleted because it is associated with one or more facilities.');
+        $this->expectException(ResourceInUseException::class);
+        $this->expectExceptionMessage("Location with ID '1' cannot be deleted because it is in use by one or more facilities");
 
         $this->locationService->deleteLocation($locationId);
     }
@@ -310,12 +311,39 @@ class LocationServiceTest extends TestCase
         $this->mockLocationRepository
             ->expects($this->once())
             ->method('getAllLocations')
-            ->willThrowException(new \Exception('Database connection failed'));
+            ->willThrowException(new \PDOException('Connection failed'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to retrieve locations: Database connection failed');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: SELECT on Locations');
 
         $this->locationService->getAllLocations($page, $perPage);
+    }
+
+    public function testGetLocationByIdDatabaseException(): void
+    {
+        $this->mockLocationRepository
+            ->expects($this->once())
+            ->method('getLocationById')
+            ->with(1)
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->locationService->getLocationById(1);
+    }
+
+    public function testCreateLocationDatabaseException(): void
+    {
+        $location = new Location(0, 'Test City', 'Test Address', '1234 AB', 'NL', '+31-20-1234567');
+
+        $this->mockLocationRepository
+            ->expects($this->once())
+            ->method('createLocation')
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->locationService->createLocation($location);
     }
 
     public function testGetTotalLocationsCount(): void

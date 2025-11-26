@@ -9,6 +9,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use App\Services\TagService;
 use App\Repositories\TagRepository;
 use App\Models\Tag;
+use App\Domain\Exceptions\DuplicateResourceException;
+use App\Domain\Exceptions\ResourceInUseException;
+use App\Domain\Exceptions\DatabaseException;
 
 class TagServiceTest extends TestCase
 {
@@ -143,10 +146,9 @@ class TagServiceTest extends TestCase
             ->with($tagId)
             ->willReturn(null);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to retrieve tag with ID 999');
+        $result = $this->tagService->getTagById($tagId);
 
-        $this->tagService->getTagById($tagId);
+        $this->assertNull($result);
     }
 
     public function testCreateTagSuccess(): void
@@ -172,8 +174,25 @@ class TagServiceTest extends TestCase
         $this->assertArrayHasKey('message', $result);
         $this->assertArrayHasKey('tag', $result);
         $this->assertEquals("Tag 'New Event Type' successfully created.", $result['message']);
+        $this->assertInstanceOf(Tag::class, $result['tag']);
         $this->assertEquals($createdTagId, $result['tag']->id);
         $this->assertEquals('New Event Type', $result['tag']->name);
+    }
+
+    public function testCreateTagDuplicateName(): void
+    {
+        $tag = new Tag(0, 'Duplicate Tag');
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('isTagNameUnique')
+            ->with('Duplicate Tag')
+            ->willReturn(false);
+
+        $this->expectException(DuplicateResourceException::class);
+        $this->expectExceptionMessage("Tag with name 'Duplicate Tag' already exists");
+
+        $this->tagService->createTag($tag);
     }
 
     public function testUpdateTagSuccess(): void
@@ -202,6 +221,22 @@ class TagServiceTest extends TestCase
         $this->assertEquals('Updated Wedding', $result['tag']->name);
     }
 
+    public function testUpdateTagDuplicateName(): void
+    {
+        $tag = new Tag(1, 'Duplicate Tag');
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('isTagNameUnique')
+            ->with('Duplicate Tag')
+            ->willReturn(false);
+
+        $this->expectException(DuplicateResourceException::class);
+        $this->expectExceptionMessage("Tag with name 'Duplicate Tag' already exists");
+
+        $this->tagService->updateTag($tag);
+    }
+
     public function testUpdateTagFailure(): void
     {
         $tag = new Tag(999, 'Non-existent Tag');
@@ -216,10 +251,10 @@ class TagServiceTest extends TestCase
             ->expects($this->once())
             ->method('updateTag')
             ->with(999, 'Non-existent Tag')
-            ->willThrowException(new \Exception('Tag not found'));
+            ->willReturn(false);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to update tag with ID 999');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: UPDATE on Tags');
 
         $this->tagService->updateTag($tag);
     }
@@ -245,6 +280,22 @@ class TagServiceTest extends TestCase
         $this->assertEquals('Tag with ID 1 successfully deleted.', $result);
     }
 
+    public function testDeleteTagUsedByFacilities(): void
+    {
+        $tag = new Tag(1, 'Wedding');
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('isTagUsedByFacilities')
+            ->with(1)
+            ->willReturn(true);
+
+        $this->expectException(ResourceInUseException::class);
+        $this->expectExceptionMessage("Tag with ID '1' cannot be deleted because it is in use by one or more facilities");
+
+        $this->tagService->deleteTag($tag);
+    }
+
     public function testDeleteTagFailure(): void
     {
         $tag = new Tag(999, 'Non-existent Tag');
@@ -259,10 +310,10 @@ class TagServiceTest extends TestCase
             ->expects($this->once())
             ->method('deleteTag')
             ->with(999)
-            ->willThrowException(new \Exception('Tag not found'));
+            ->willReturn(false);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to delete tag with ID 999');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: DELETE on Tags');
 
         $this->tagService->deleteTag($tag);
     }
@@ -275,11 +326,84 @@ class TagServiceTest extends TestCase
         $this->mockTagRepository
             ->expects($this->once())
             ->method('getAllTags')
-            ->willThrowException(new \Exception('Database connection failed'));
+            ->willThrowException(new \PDOException('Connection refused'));
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to retrieve tags: Database connection failed');
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Database operation failed: SELECT on Tags');
 
         $this->tagService->getAllTags($page, $perPage);
+    }
+
+    public function testGetAllTagsDatabaseException(): void
+    {
+        $page = 1;
+        $perPage = 10;
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('getAllTags')
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->tagService->getAllTags($page, $perPage);
+    }
+
+    public function testGetTagByIdDatabaseException(): void
+    {
+        $tagId = 1;
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('getTagById')
+            ->with($tagId)
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->tagService->getTagById($tagId);
+    }
+
+    public function testCreateTagDatabaseException(): void
+    {
+        $tag = new Tag(0, 'New Tag');
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('isTagNameUnique')
+            ->with('New Tag')
+            ->willReturn(true);
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('createTag')
+            ->with('New Tag')
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->tagService->createTag($tag);
+    }
+
+    public function testCreateTagReturnsFalse(): void
+    {
+        $tag = new Tag(0, 'New Tag');
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('isTagNameUnique')
+            ->with('New Tag')
+            ->willReturn(true);
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('createTag')
+            ->with('New Tag')
+            ->willReturn(false);
+
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage('Failed to retrieve tag ID');
+
+        $this->tagService->createTag($tag);
     }
 }
