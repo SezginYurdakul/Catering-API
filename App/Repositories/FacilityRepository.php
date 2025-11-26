@@ -277,13 +277,13 @@ class FacilityRepository
 
             // Create placeholders for the IN clause
             $placeholders = implode(',', array_fill(0, count($tagIds), '?'));
-            
+
             $deleteQuery = "DELETE FROM Facility_Tags WHERE facility_id = ? AND tag_id IN ($placeholders)";
-            
+
             // Prepare parameters: facility_id first, then all tag_ids
             $params = [$facilityId];
             $params = array_merge($params, $tagIds);
-            
+
             $this->db->executeQuery($deleteQuery, $params);
         } catch (\Exception $e) {
             throw new \Exception("Failed to remove tags from facility with ID $facilityId: " . $e->getMessage());
@@ -349,6 +349,36 @@ class FacilityRepository
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
             throw new \Exception("Failed to get facilities by tag: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get employees by facility ID.
+     *
+     * @param int $facilityId
+     * @return array
+     * @throws \Exception
+     */
+    public function getEmployeesByFacilityId(int $facilityId): array
+    {
+        try {
+            $query = "
+                SELECT 
+                    e.id AS employee_id,
+                    e.name AS employee_name
+                FROM 
+                    Employees e
+                INNER JOIN 
+                    Employee_Facility ef ON e.id = ef.employee_id
+                WHERE 
+                    ef.facility_id = :facility_id
+                ORDER BY e.name
+            ";
+
+            $stmt = $this->db->executeSelectQuery($query, [':facility_id' => $facilityId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to get employees by facility ID: " . $e->getMessage());
         }
     }
 }
