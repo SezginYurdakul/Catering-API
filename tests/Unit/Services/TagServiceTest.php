@@ -291,7 +291,7 @@ class TagServiceTest extends TestCase
             ->willReturn(true);
 
         $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("Tag with ID '1' cannot be deleted because it is in use by one or more facilities");
+        $this->expectExceptionMessage("This Tag cannot be deleted because it is currently in use by related one or more facilities");
 
         $this->tagService->deleteTag($tag);
     }
@@ -399,7 +399,7 @@ class TagServiceTest extends TestCase
             ->expects($this->once())
             ->method('createTag')
             ->with('New Tag')
-            ->willReturn(false);
+            ->willReturn(0);
 
         $this->expectException(DatabaseException::class);
         $this->expectExceptionMessage('Failed to retrieve tag ID');

@@ -235,7 +235,7 @@ class TagControllerTest extends TestCase
             ->willThrowException(new ResourceInUseException('Tag', $tagId, 'one or more facilities'));
 
         $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("Tag with ID '1' cannot be deleted because it is in use by one or more facilities");
+        $this->expectExceptionMessage("This Tag cannot be deleted because it is currently in use by related one or more facilities");
 
         $this->mockTagService->deleteTag($tagInUse);
     }

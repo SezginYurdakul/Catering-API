@@ -1,0 +1,251 @@
+PHPUnit 12.4.0 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.28
+Configuration: /var/www/html/phpunit.xml
+
+...............................................................  63 / 207 ( 30%)
+............................................................... 126 / 207 ( 60%)
+..........................................D.................... 189 / 207 ( 91%)
+..................                                              207 / 207 (100%)
+
+Time: 00:00.035, Memory: 16.00 MB
+
+Auth Controller (Tests\Unit\Controllers\AuthController)
+ ✔ Login with valid credentials
+ ✔ Login with invalid json
+ ✔ Login with missing username
+ ✔ Login with missing password
+ ✔ Login with empty credentials
+ ✔ Jwt token generation
+ ✔ Auth controller constructor
+
+Auth Middleware (Tests\Unit\Middleware\AuthMiddleware)
+ ✔ Handle with valid token
+ ✔ Handle with valid token different case
+ ✔ Handle with missing authorization header
+ ✔ Handle with empty authorization header
+ ✔ Handle with invalid bearer format
+ ✔ Handle with missing bearer
+ ✔ Handle with expired token
+ ✔ Handle with invalid token
+ ✔ Handle with tampered token
+ ✔ Handle with token signed with different key
+ ✔ Handle with extra spaces in header
+ ✔ Handle with custom user data
+ ✔ Handle with minimum viable token
+
+Facility (Tests\Unit\Models\Facility)
+ ✔ Facility creation with all fields
+ ✔ Facility creation without tags
+ ✔ Facility creation with null tags
+ ✔ Facility creation with empty tags array
+ ✔ Facility location relationship
+ ✔ Facility properties are public
+ ✔ Facility with complex tag structure
+
+Facility Controller (Tests\Unit\Controllers\FacilityController)
+ ✔ Get facilities validation success
+ ✔ Get facilities with search parameters
+ ✔ Get facility by id success
+ ✔ Get facility by id not found
+ ✔ Create facility json validation
+ ✔ Update facility success
+ ✔ Delete facility success
+ ✔ Input sanitization
+ ✔ Pagination validation
+ ✔ Facility service dependency injection
+ ✔ Controller response structure
+ ✔ Error handling
+
+Facility Service (Tests\Unit\Services\FacilityService)
+ ✔ Get facilities success
+ ✔ Get facilities with filters
+ ✔ Get facility by id success
+ ✔ Get facility by id not found
+ ✔ Create facility with mixed tags
+ ✔ Repository exception handling
+ ✔ Get filtered facilities count simple
+ ✔ Get facilities by location simple
+ ⚠ Process smart tags with mixed input
+ ✔ Update facility
+ ✔ Delete facility
+ ✔ Get facilities by tag
+ ✔ Add tags to facility
+ ✔ Remove tags from facility
+
+Input Sanitizer (Tests\Unit\Helpers\InputSanitizer)
+ ✔ Sanitize general data
+ ✔ Sanitize id
+ ✔ Sanitize email
+ ✔ Sanitize phone
+ ✔ Sanitize float
+ ✔ Sanitize bool
+ ✔ Sanitize address
+ ✔ Sanitize nested array
+ ✔ Sanitize international names
+ ✔ Sanitize special characters
+ ✔ Sanitize json preserves structure
+ ✔ Sanitize empty and whitespace
+
+Location (Tests\Unit\Models\Location)
+ ✔ Location creation with all fields
+ ✔ Location creation with only id
+ ✔ Location creation with partial fields
+ ✔ Location creation with empty strings
+ ✔ Location properties are public
+
+Location Controller (Tests\Unit\Controllers\LocationController)
+ ✔ Get all locations validation
+ ✔ Get location by id success
+ ✔ Get location by id not found
+ ✔ Create location json validation
+ ✔ Create location missing required fields
+ ✔ Update location success
+ ✔ Update location not found
+ ✔ Delete location success
+ ✔ Delete location not found
+ ✔ Delete location used by facilities
+ ✔ Input sanitization
+ ✔ Pagination parameter processing
+ ✔ Location service dependency injection
+ ✔ Error handling for service exceptions
+ ✔ Response structure for list locations
+ ✔ Response structure for single location
+ ✔ Response structure for create update
+
+Location Service (Tests\Unit\Services\LocationService)
+ ✔ Get all locations success
+ ✔ Get all locations with pagination
+ ✔ Get all locations empty result
+ ✔ Get location by id success
+ ✔ Get location by id not found
+ ✔ Create location success
+ ✔ Update location success
+ ✔ Update location failure
+ ✔ Delete location success
+ ✔ Delete location failure
+ ✔ Delete location used by facilities
+ ✔ Repository exception handling
+ ✔ Get location by id database exception
+ ✔ Create location database exception
+ ✔ Get total locations count
+
+Logger Sanitization (Tests\Unit\Helpers\LoggerSanitization)
+ ✔ Validation error sanitizes password
+ ✔ Sanitization redacts password field
+ ✔ Sanitization redacts tokens
+ ✔ Sanitization works recursively
+ ✔ Sanitization is case insensitive
+ ✔ Sanitization handles partial matches
+ ✔ Non array context remains unchanged
+
+Pagination Helper (Tests\Unit\Helpers\PaginationHelper)
+ ✔ Paginate basic
+ ✔ Paginate second page
+ ✔ Paginate last page
+ ✔ Paginate with remainder
+ ✔ Paginate page exceeds total
+ ✔ Paginate zero page
+ ✔ Paginate negative page
+ ✔ Paginate zero items
+ ✔ Paginate large per page
+ ✔ Paginate exact division
+ ✔ Paginate zero per page
+ ✔ Paginate negative per page
+ ✔ Paginate negative total items
+
+Tag (Tests\Unit\Models\Tag)
+ ✔ Tag creation
+ ✔ Tag creation with empty name
+ ✔ Tag creation with special characters
+ ✔ Tag creation with unicode characters
+ ✔ Tag creation with long name
+ ✔ Tag properties are public
+ ✔ Tag creation with zero id
+ ✔ Tag creation with negative id
+
+Tag Controller (Tests\Unit\Controllers\TagController)
+ ✔ Get all tags validation
+ ✔ Get tag by id success
+ ✔ Get tag by id not found
+ ✔ Create tag success
+ ✔ Create tag empty name
+ ✔ Create tag duplicate name
+ ✔ Update tag success
+ ✔ Update tag not found
+ ✔ Delete tag success
+ ✔ Delete tag not found
+ ✔ Delete tag used by facilities
+ ✔ Input sanitization for tag name
+ ✔ Tag name validation
+ ✔ Pagination parameter processing
+ ✔ Tag service dependency injection
+ ✔ Error handling for service exceptions
+ ✔ Response structure for list tags
+ ✔ Response structure for single tag
+ ✔ Response structure for create update
+ ✔ Json input validation
+ ✔ Tag name sanitization
+
+Tag Service (Tests\Unit\Services\TagService)
+ ✔ Get all tags success
+ ✔ Get all tags with pagination
+ ✔ Get all tags empty result
+ ✔ Get tag by id success
+ ✔ Get tag by id not found
+ ✔ Create tag success
+ ✔ Create tag duplicate name
+ ✔ Update tag success
+ ✔ Update tag duplicate name
+ ✔ Update tag failure
+ ✔ Delete tag success
+ ✔ Delete tag used by facilities
+ ✔ Delete tag failure
+ ✔ Repository exception handling
+ ✔ Get all tags database exception
+ ✔ Get tag by id database exception
+ ✔ Create tag database exception
+ ✔ Create tag returns false
+
+Validator (Tests\Unit\Helpers\Validator)
+ ✔ Required fields success
+ ✔ Required fields failure
+ ✔ Positive int success
+ ✔ Positive int failure
+ ✔ Positive int negative failure
+ ✔ Positive int string failure
+ ✔ Pagination success
+ ✔ Pagination string params
+ ✔ Pagination invalid page
+ ✔ Pagination invalid per page
+ ✔ Pagination negative per page
+ ✔ Allowed values success
+ ✔ Allowed values failure
+ ✔ String length success
+ ✔ String length too short
+ ✔ String length too long
+ ✔ Email success
+ ✔ Email failure
+ ✔ Email failure no at
+ ✔ Email failure no domain
+ ✔ Validate pagination success
+ ✔ Validate pagination invalid page
+ ✔ Validate pagination invalid per page
+ ✔ Validate pagination multiple errors
+ ✔ Validate required success
+ ✔ Validate required missing field
+ ✔ Validate required empty value
+ ✔ Validate positive int success
+ ✔ Validate positive int failure
+ ✔ Validate allowed values success
+ ✔ Validate allowed values failure
+ ✔ Validate email success
+ ✔ Validate email failure
+ ✔ Validate string length success
+ ✔ Validate string length too short
+ ✔ Validate string length too long
+ ✔ Validate operator success
+ ✔ Validate operator failure
+
+OK, but there were issues!
+Tests: 207, Assertions: 760, PHPUnit Deprecations: 1.
