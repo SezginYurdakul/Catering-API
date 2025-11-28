@@ -106,9 +106,16 @@ $di->setShared('facilityService', function () use ($di) {
     return new \App\Services\FacilityService($facilityRepository, $locationService, $tagService);
 });
 
+// Add EmailService to the DI container
+$di->setShared('emailService', function () {
+    return new \App\Services\EmailService();
+});
+
 $di->setShared('employeeService', function () use ($di) {
     $db = $di->getShared('db');
     $logger = $di->getShared('logger');
     $employeeRepository = new EmployeeRepository($db, $logger);
-    return new \App\Services\EmployeeService($employeeRepository);
+    $facilityRepository = new FacilityRepository($db, $logger);
+    $emailService = $di->getShared('emailService');
+    return new \App\Services\EmployeeService($employeeRepository, $facilityRepository, $emailService);
 });

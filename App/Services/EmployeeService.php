@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Repositories\EmployeeRepository;
+use App\Repositories\FacilityRepository;
 use App\Helpers\PaginationHelper;
 use App\Domain\Exceptions\DuplicateResourceException;
 use App\Domain\Exceptions\DatabaseException;
@@ -13,10 +14,17 @@ use App\Domain\Exceptions\DatabaseException;
 class EmployeeService implements IEmployeeService
 {
     private EmployeeRepository $employeeRepository;
+    private FacilityRepository $facilityRepository;
+    private EmailService $emailService;
 
-    public function __construct(EmployeeRepository $employeeRepository)
-    {
+    public function __construct(
+        EmployeeRepository $employeeRepository,
+        FacilityRepository $facilityRepository,
+        EmailService $emailService
+    ) {
         $this->employeeRepository = $employeeRepository;
+        $this->facilityRepository = $facilityRepository;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -151,10 +159,12 @@ class EmployeeService implements IEmployeeService
         }
 
         try {
+            error_log("Creating employee with data: " . json_encode($data));
+
             $employeeId = $this->employeeRepository->createEmployee([
                 'name' => $data['name'],
-                'address' => $data['address'],
-                'phone' => $data['phone'],
+                'address' => $data['address'] ?? '',
+                'phone' => $data['phone'] ?? '',
                 'email' => $data['email']
             ]);
 
@@ -162,16 +172,37 @@ class EmployeeService implements IEmployeeService
                 throw new DatabaseException('INSERT', 'Employees', 'Failed to retrieve employee ID');
             }
 
+            error_log("Employee created with ID: {$employeeId}");
+
             // Add facility relationships if provided
             if (isset($data['facilityIds']) && is_array($data['facilityIds']) && !empty($data['facilityIds'])) {
+                error_log("Adding facility relationships: " . json_encode($data['facilityIds']));
                 $this->employeeRepository->addEmployeeFacilities($employeeId, $data['facilityIds']);
             }
 
-            return $this->getEmployeeById($employeeId);
+            error_log("Fetching employee by ID: {$employeeId}");
+            $employee = $this->getEmployeeById($employeeId);
+
+            if (!$employee) {
+                throw new DatabaseException('SELECT', 'Employees', 'Failed to retrieve created employee');
+            }
+
+            error_log("Employee fetched successfully, sending email...");
+
+            // Send welcome email if email is provided
+            if (!empty($data['email'])) {
+                $this->sendWelcomeEmail($employee);
+            }
+
+            return $employee;
         } catch (\PDOException $e) {
+            error_log("PDO Exception in createEmployee: " . $e->getMessage());
             throw new DatabaseException('INSERT', 'Employees', $e->getMessage(), [
                 'email' => $data['email']
             ]);
+        } catch (\Exception $e) {
+            error_log("Exception in createEmployee: " . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -272,6 +303,60 @@ class EmployeeService implements IEmployeeService
     }
 
     /**
+     * Send welcome email to employee.
+     */
+    private function sendWelcomeEmail(Employee $employee): void
+    {
+        try {
+            // Prepare email data
+            $emailData = [
+                'name' => $employee->name,
+                'email' => $employee->email,
+                'address' => $employee->address ?? 'Not provided',
+                'facility_names' => $this->getFacilityNames($employee->facilityIds ?? []),
+            ];
+
+            // Send email (non-blocking, don't fail if email fails)
+            $sent = $this->emailService->sendEmployeeWelcomeEmail($emailData);
+
+            if ($sent) {
+                error_log("Welcome email sent successfully to: {$employee->email}");
+            } else {
+                error_log("Failed to send welcome email to: {$employee->email}");
+            }
+        } catch (\Exception $e) {
+            // Log error but don't throw exception
+            // Employee creation should not fail if email fails
+            error_log("Welcome email error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get facility names from facility IDs.
+     */
+    private function getFacilityNames(array $facilityIds): string
+    {
+        if (empty($facilityIds)) {
+            return 'Not assigned';
+        }
+
+        try {
+            $names = [];
+            foreach ($facilityIds as $id) {
+                $facility = $this->facilityRepository->getFacilityById($id);
+                if ($facility && isset($facility['facility_name'])) {
+                    $names[] = $facility['facility_name'];
+                }
+            }
+
+            return !empty($names) ? implode(', ', $names) : 'Not assigned';
+        } catch (\Exception $e) {
+            error_log("Error fetching facility names: " . $e->getMessage());
+            return 'Not assigned';
+        }
+    }
+
+    /**
      * Map employee data to Employee objects.
      */
     private function mapToEmployeeObjects(array $employeeData): array
@@ -280,17 +365,17 @@ class EmployeeService implements IEmployeeService
         foreach ($employeeData as $data) {
             try {
                 $facilityIds = $this->employeeRepository->getFacilityIdsByEmployeeId((int) $data['id']);
-                
+
                 $employees[] = new Employee(
                     (int) $data['id'],
-                    $data['name'],
-                    $data['address'],
-                    $data['phone'],
-                    $data['email'],
-                    $data['created_at'],
+                    $data['name'] ?? '',
+                    $data['address'] ?? '',
+                    $data['phone'] ?? '',
+                    $data['email'] ?? '',
+                    $data['created_at'] ?? date('Y-m-d H:i:s'),
                     $facilityIds
                 );
-            } catch (\PDOException $e) {
+            } catch (\PDOException | \Exception $e) {
                 // Log and skip problematic employee
                 error_log("Failed to map employee {$data['id']}: " . $e->getMessage());
                 continue;
