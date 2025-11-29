@@ -75,8 +75,10 @@
 │   │   └── TagRepository.php            # Tag data access
 │   └── Services
 │       ├── CustomDb.php                 # Custom database service
-│       ├── EmployeeService.php          # Employee business logic
+│       ├── EmailService.php             # Email sending via Resend API
+│       ├── EmployeeService.php          # Employee business logic + email notifications
 │       ├── FacilityService.php          # Facility business logic
+│       ├── IEmailService.php            # Email service interface
 │       ├── IEmployeeService.php         # Employee service interface
 │       ├── IFacilityService.php         # Facility service interface
 │       ├── ILocationService.php         # Location service interface
@@ -131,6 +133,7 @@
 │   └── README.md
 └── tests
     ├── bootstrap.php                    # Test bootstrap
+    ├── EmailServiceTest.php             # Email service tests (Resend API)
     ├── Integration                      # Integration tests (future)
     └── Unit                             # Unit tests
         ├── Controllers
@@ -150,6 +153,7 @@
         │   ├── LocationTest.php
         │   └── TagTest.php
         └── Services
+            ├── EmailServiceTest.php     # Email service unit tests
             ├── FacilityServiceTest.php
             ├── LocationServiceTest.php
             └── TagServiceTest.php
@@ -177,6 +181,7 @@
 
 ### API Features
 - **RESTful Design**: Standard HTTP methods and status codes
+- **Email Notifications**: Automated emails via Resend API (custom domain)
 - **Pagination**: Configurable page size with metadata
 - **Search & Filtering**: Multi-field search with AND/OR operators
 - **Validation**: Comprehensive input validation with batch error reporting
