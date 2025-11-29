@@ -341,4 +341,43 @@ class FacilityController extends BaseController
         $response = new Ok(['message' => 'Facility deleted successfully']);
         $response->send();
     }
+
+    /**
+     * Get all employees assigned to a specific facility.
+     */
+    public function getFacilityEmployees(int $id): void
+    {
+        $errors = [];
+
+        // ID validation
+        $error = Validator::validatePositiveInt($id, 'id');
+        if ($error) {
+            throw new ValidationException(['id' => $error]);
+        }
+
+        // Verify facility exists
+        $facility = $this->facilityService->getFacilityById($id);
+        if (!$facility) {
+            throw new NotFound('', 'Facility', (string) $id);
+        }
+
+        // Pagination validation
+        $errors = array_merge($errors, Validator::validatePagination($_GET));
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+
+        $page = isset($_GET['page']) ? InputSanitizer::sanitizeId($_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? InputSanitizer::sanitizeId($_GET['per_page']) : 10;
+
+        // Get employees for this facility
+        $employeesData = $this->facilityService->getEmployeesByFacilityId($id, $page, $perPage);
+
+        $response = new Ok([
+            'facility_id' => $id,
+            'employees' => $employeesData['employees'],
+            'pagination' => $employeesData['pagination']
+        ]);
+        $response->send();
+    }
 }

@@ -243,13 +243,14 @@ class FacilityService implements IFacilityService
 
     /**
      * Delete a facility by its ID.
-     * 
+     *
      * @throws ResourceInUseException If facility has assigned employees
      * @throws DatabaseException If database operation fails
      */
     public function deleteFacility(int $id): array
     {
         try {
+            // Check if facility has any assigned employees
             $employees = $this->facilityRepository->getEmployeesByFacilityId($id);
             if (empty($employees)) {
                 $result = $this->facilityRepository->deleteFacility($id);
@@ -468,8 +469,34 @@ class FacilityService implements IFacilityService
         return $facilities;
     }
 
-    private function getEmployeesByFacilityId(int $facilityId): array
+    /**
+     * Get employees assigned to a specific facility with pagination.
+     *
+     * @throws DatabaseException If database operation fails
+     */
+    public function getEmployeesByFacilityId(int $facilityId, int $page = 1, int $perPage = 10): array
     {
-        return $this->facilityRepository->getEmployeesByFacilityId($facilityId);
+        try {
+            $offset = ($page - 1) * $perPage;
+
+            $employeeData = $this->facilityRepository->getEmployeesByFacilityId(
+                $facilityId,
+                $perPage,
+                $offset
+            );
+
+            $totalEmployees = $this->facilityRepository->getEmployeeCountByFacilityId($facilityId);
+
+            $pagination = PaginationHelper::paginate($totalEmployees, $page, $perPage);
+
+            return [
+                'employees' => $employeeData,
+                'pagination' => $pagination
+            ];
+        } catch (\PDOException $e) {
+            throw new DatabaseException('SELECT', 'Employees by Facility', $e->getMessage(), [
+                'facility_id' => $facilityId
+            ]);
+        }
     }
 }
