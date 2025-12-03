@@ -20,12 +20,13 @@ $router = Factory::getDi()->getShared('router');
 // 1. List all: /facilities?page=1&per_page=10
 // 2. Field-specific search: /facilities?city=Amsterdam&tag=Wedding&operator=AND
 // 3. Legacy search: /facilities?query=Amsterdam&filter=city,facility_name
-$router->get('/facilities',          FacilityController::class . '@getFacilities');
-$router->get('/facilities/(\d+)',    FacilityController::class . '@getFacilityById');
-$router->post('/facilities',         FacilityController::class . '@createFacility');
-$router->patch('/facilities/(\d+)',  FacilityController::class . '@updateFacility');
-$router->put('/facilities/(\d+)',    FacilityController::class . '@updateFacility');
-$router->delete('/facilities/(\d+)', FacilityController::class . '@deleteFacility');
+$router->get('/facilities',                     FacilityController::class . '@getFacilities');
+$router->get('/facilities/(\d+)',               FacilityController::class . '@getFacilityById');
+$router->get('/facilities/(\d+)/employees',     FacilityController::class . '@getFacilityEmployees');
+$router->post('/facilities',                    FacilityController::class . '@createFacility');
+$router->patch('/facilities/(\d+)',             FacilityController::class . '@updateFacility');
+$router->put('/facilities/(\d+)',               FacilityController::class . '@updateFacility');
+$router->delete('/facilities/(\d+)',            FacilityController::class . '@deleteFacility');
 
 // Location routes
 $router->get('/locations',           LocationController::class . '@getAllLocations');

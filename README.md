@@ -1,15 +1,13 @@
-## API Documentation: Catering API
-### Important None:
-You can test the API directly using my Postman collection:
-click to open => https://solar-resonance-278359.postman.co/workspace/Team-Workspace~1a2d800b-458f-49ba-8fa2-db0eb7f4301e/collection/22299640-f0d40563-5130-4491-b0b8-5ddf6ada84a9?action=share&creator=22299640
-### Description
-This API is designed to manage backend operations for a catering service. It provides endpoints for managing facilities, locations, and tags, including CRUD operations, search functionality, and pagination support.
+# Catering API
+
+A RESTful API for managing catering facilities, locations, tags, and employees with JWT authentication and automated email notifications.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose OR
 - PHP 8.3+, MySQL 8.0+, Composer
+- Resend API key (free tier: 3,000 emails/month)
 
 ### Installation
 
@@ -76,6 +74,11 @@ JWT_SECRET_KEY=your_secure_jwt_secret
 # Hash password: php -r "echo password_hash('yourpass', PASSWORD_BCRYPT);"
 LOGIN_USERNAME=admin
 LOGIN_PASSWORD=$2y$10$hashed_password_here
+
+# Email Configuration (get free API key from resend.com)
+RESEND_API_KEY=re_YOUR_API_KEY_HERE
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="Your Company Name"
 ```
 
 ### 2. Login
@@ -138,7 +141,7 @@ curl http://localhost:8080/facilities \
 - `GET /employees` - List all employees
 - `GET /employees/{id}` - Get employee by ID
 - `GET /employees/facility/{facility_id}` - Get employees by facility
-- `POST /employees` - Create new employee
+- `POST /employees` - Create new employee (sends welcome email automatically)
 - `PUT /employees/{id}` - Update employee
 - `DELETE /employees/{id}` - Delete employee
 
@@ -171,6 +174,42 @@ curl "http://localhost:8080/facilities/search?query=Conference&filter=city,tag&o
 curl "http://localhost:8080/facilities?page=1&per_page=10" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
+
+### Create Employee (Sends Welcome Email)
+```bash
+curl -X POST http://localhost:8080/employees \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "1234567890",
+    "address": "123 Main St",
+    "facilityIds": [1, 2]
+  }'
+```
+
+---
+
+## 📧 Email Notifications
+
+Automated email notifications via **Resend API** (3,000 emails/month free).
+
+**Features:**
+- Welcome email on employee creation
+- HTML + plain text templates
+- Custom domain (`noreply@sezginyurdakul.com`)
+- Non-blocking (employee creation succeeds even if email fails)
+
+**Quick Setup:**
+```env
+# .env
+RESEND_API_KEY=re_YOUR_KEY_HERE          # Get from resend.com
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="Catering Management"
+```
+
+**Monitor:** [resend.com/emails](https://resend.com/emails) | `docker logs catering_api_app | grep -i email`
 
 ---
 
@@ -280,6 +319,8 @@ Catering-API/
 
 - ✅ RESTful API design
 - ✅ JWT authentication
+- ✅ Automated email notifications (Resend API)
+- ✅ Custom domain email (noreply@sezginyurdakul.com)
 - ✅ Domain-driven exception handling
 - ✅ Comprehensive input validation
 - ✅ Security-focused logging (sensitive data sanitization)
@@ -342,4 +383,5 @@ This project is open source and available for educational purposes.
 ---
 
 ## 📞 Support
+
 For issues or questions, please refer to the documentation in the `docs/` directory.

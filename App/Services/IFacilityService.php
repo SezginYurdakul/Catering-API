@@ -76,4 +76,9 @@ interface IFacilityService
      * Get total count of facilities that match the given filters.
      */
     public function getFilteredFacilitiesCount(?string $name = null, ?string $tag = null, ?string $city = null, ?string $country = null, string $operator = 'AND'): int;
+
+    /**
+     * Get employees assigned to a specific facility with pagination.
+     */
+    public function getEmployeesByFacilityId(int $facilityId, int $page = 1, int $perPage = 10): array;
 }

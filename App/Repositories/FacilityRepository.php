@@ -353,32 +353,74 @@ class FacilityRepository
     }
 
     /**
-     * Get employees by facility ID.
+     * Get employees by facility ID with optional pagination.
      *
      * @param int $facilityId
+     * @param int|null $perPage
+     * @param int|null $offset
      * @return array
      * @throws \Exception
      */
-    public function getEmployeesByFacilityId(int $facilityId): array
+    public function getEmployeesByFacilityId(int $facilityId, ?int $perPage = null, ?int $offset = null): array
     {
         try {
             $query = "
-                SELECT 
-                    e.id AS employee_id,
-                    e.name AS employee_name
-                FROM 
+                SELECT
+                    e.id,
+                    e.name,
+                    e.address,
+                    e.phone,
+                    e.email,
+                    e.created_at
+                FROM
                     Employees e
-                INNER JOIN 
+                INNER JOIN
                     Employee_Facility ef ON e.id = ef.employee_id
-                WHERE 
+                WHERE
                     ef.facility_id = :facility_id
                 ORDER BY e.name
             ";
 
+            // Add pagination if provided
+            if ($perPage !== null && $offset !== null) {
+                $query .= " LIMIT $perPage OFFSET $offset";
+            }
+
             $stmt = $this->db->executeSelectQuery($query, [':facility_id' => $facilityId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->logDatabaseError('SELECT', 'getEmployeesByFacilityId', $e->getMessage());
+            }
             throw new \Exception("Failed to get employees by facility ID: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get count of employees by facility ID.
+     *
+     * @param int $facilityId
+     * @return int
+     * @throws \Exception
+     */
+    public function getEmployeeCountByFacilityId(int $facilityId): int
+    {
+        try {
+            $query = "
+                SELECT COUNT(DISTINCT e.id) as count
+                FROM Employees e
+                INNER JOIN Employee_Facility ef ON e.id = ef.employee_id
+                WHERE ef.facility_id = :facility_id
+            ";
+
+            $stmt = $this->db->executeSelectQuery($query, [':facility_id' => $facilityId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->logDatabaseError('SELECT', 'getEmployeeCountByFacilityId', $e->getMessage());
+            }
+            throw new \Exception("Failed to fetch employee count for facility: " . $e->getMessage());
         }
     }
 }
