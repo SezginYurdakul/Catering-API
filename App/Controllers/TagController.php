@@ -17,11 +17,17 @@ class TagController extends BaseController
 {
     private ITagService $tagService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->tagService = $this->getService('tagService');
-        $this->requireAuth();
+    public function __construct(
+        ITagService $tagService,
+        bool $initializeBase = true
+    ) {
+        if ($initializeBase) {
+            parent::__construct();
+        }
+        $this->tagService = $tagService;
+        if ($initializeBase) {
+            $this->requireAuth();
+        }
     }
 
     /**

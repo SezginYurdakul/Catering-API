@@ -19,12 +19,19 @@ class FacilityController extends BaseController
     private IFacilityService $facilityService;
     private ILocationService $locationService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->facilityService = $this->getService('facilityService');
-        $this->locationService = $this->getService('locationService');
-        $this->requireAuth();
+    public function __construct(
+        IFacilityService $facilityService,
+        ILocationService $locationService,
+        bool $initializeBase = true
+    ) {
+        if ($initializeBase) {
+            parent::__construct();
+        }
+        $this->facilityService = $facilityService;
+        $this->locationService = $locationService;
+        if ($initializeBase) {
+            $this->requireAuth();
+        }
     }
 
     /**
@@ -47,14 +54,14 @@ class FacilityController extends BaseController
         }
 
         // Field-specific search parameters
-        $facilityName = isset($_GET['facility_name']) 
-            ? InputSanitizer::sanitize(['value' => $_GET['facility_name']])['value'] 
+        $facilityName = isset($_GET['facility_name'])
+            ? InputSanitizer::sanitize(['value' => $_GET['facility_name']])['value']
             : null;
-        $city = isset($_GET['city']) 
-            ? InputSanitizer::sanitize(['value' => $_GET['city']])['value'] 
+        $city = isset($_GET['city'])
+            ? InputSanitizer::sanitize(['value' => $_GET['city']])['value']
             : null;
-        $tag = isset($_GET['tag']) 
-            ? InputSanitizer::sanitize(['value' => $_GET['tag']])['value'] 
+        $tag = isset($_GET['tag'])
+            ? InputSanitizer::sanitize(['value' => $_GET['tag']])['value']
             : null;
 
         // Convert empty strings to null
@@ -65,8 +72,8 @@ class FacilityController extends BaseController
         }
 
         // Filters validation
-        $filters = isset($_GET['filter']) 
-            ? array_filter(array_map('trim', explode(',', (string) $_GET['filter']))) 
+        $filters = isset($_GET['filter'])
+            ? array_filter(array_map('trim', explode(',', (string) $_GET['filter'])))
             : [];
 
         $allowedFilters = ['facility_name', 'city', 'tag'];
@@ -91,8 +98,8 @@ class FacilityController extends BaseController
 
         // Get facilities
         $facilitiesData = $this->facilityService->getFacilities(
-            $page, 
-            $perPage, 
+            $page,
+            $perPage,
             $facilityName,
             $tag,
             $city,
@@ -105,7 +112,7 @@ class FacilityController extends BaseController
         // Validate page number against total pages
         $totalItems = $facilitiesData['pagination']['total_items'];
         $totalPages = (int) ceil($totalItems / $perPage);
-        
+
         if ($totalPages > 0 && $page > $totalPages) {
             throw new ValidationException([
                 'page' => "The requested page ($page) exceeds the total number of pages ($totalPages)."
@@ -165,7 +172,7 @@ class FacilityController extends BaseController
 
         // Sanitize inputs
         $data = InputSanitizer::sanitize($data);
-        
+
         // Validate location_id is a positive integer
         $error = Validator::validatePositiveInt($data['location_id'], 'location_id');
         if ($error) {
@@ -183,12 +190,12 @@ class FacilityController extends BaseController
 
         // Handle smart tags - can be mixed array of tag IDs and names
         $tags = $data['tags'] ?? [];
-        
+
         // Legacy support for separate tagIds and tagNames
         if (empty($tags)) {
             $tagIds = $data['tagIds'] ?? [];
             $tagNames = $data['tagNames'] ?? [];
-            
+
             if (!empty($tagIds) && !empty($tagNames)) {
                 $errors['tags'] = "Cannot provide both 'tagIds' and 'tagNames'. Use 'tags' array instead.";
             } else {
@@ -239,7 +246,7 @@ class FacilityController extends BaseController
         // Check if at least one field provided
         $updatableFields = ['name', 'location_id', 'tags', 'tagIds', 'tagNames'];
         $providedFields = array_intersect($updatableFields, array_keys($data));
-        
+
         if (empty($providedFields)) {
             throw new ValidationException([
                 'fields' => 'At least one field (name, location_id, tags) must be provided for update'
@@ -248,7 +255,7 @@ class FacilityController extends BaseController
 
         // Sanitize data
         $data = InputSanitizer::sanitize($data);
-        
+
         // Validate and sanitize name
         if (isset($data['name'])) {
             if (empty(trim($data['name']))) {
@@ -273,12 +280,12 @@ class FacilityController extends BaseController
 
         // Handle smart tags
         $tags = $data['tags'] ?? [];
-        
+
         // Legacy support for separate tagIds and tagNames
         if (empty($tags)) {
             $tagIds = $data['tagIds'] ?? [];
             $tagNames = $data['tagNames'] ?? [];
-            
+
             if (!empty($tagIds) && !empty($tagNames)) {
                 $errors['tags'] = "Cannot provide both 'tagIds' and 'tagNames'. Use 'tags' array instead.";
             } else {

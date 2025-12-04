@@ -17,20 +17,37 @@ class AuthController extends BaseController
     private string $password;
     protected Logger $logger;
 
-    public function __construct()
-    {
-        $config = require __DIR__ . '/../../config/config.php';
-        $this->secretKey = $config['jwt']['secret_key'];
-        $this->username = $config['auth']['username'];
-        $this->password = $config['auth']['password'];
-        $this->logger = new Logger(__DIR__ . '/../../logs/api.log');
+    public function __construct(
+        ?string $secretKey = null,
+        ?string $username = null,
+        ?string $password = null,
+        ?Logger $logger = null
+    ) {
+        // Load from config if not provided (for production)
+        if ($secretKey === null || $username === null || $password === null) {
+            $config = require __DIR__ . '/../../config/config.php';
+            $this->secretKey = $secretKey ?? $config['jwt']['secret_key'];
+            $this->username = $username ?? $config['auth']['username'];
+            $this->password = $password ?? $config['auth']['password'];
+        } else {
+            $this->secretKey = $secretKey;
+            $this->username = $username;
+            $this->password = $password;
+        }
 
-        if (class_exists('App\\Plugins\\Di\\Factory')) {
-            try {
-                $this->logger = \App\Plugins\Di\Factory::getDi()->getShared('logger');
-            } catch (\Throwable) {
-                //If logger service is not available, use the default logger
+        // Logger initialization
+        if ($logger === null) {
+            $this->logger = new Logger(__DIR__ . '/../../logs/api.log');
+
+            if (class_exists('App\\Plugins\\Di\\Factory')) {
+                try {
+                    $this->logger = \App\Plugins\Di\Factory::getDi()->getShared('logger');
+                } catch (\Throwable) {
+                    //If logger service is not available, use the default logger
+                }
             }
+        } else {
+            $this->logger = $logger;
         }
     }
 

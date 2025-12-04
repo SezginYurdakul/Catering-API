@@ -16,11 +16,17 @@ class EmployeeController extends BaseController
 {
     private IEmployeeService $employeeService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->employeeService = $this->getService('employeeService');
-        $this->requireAuth();
+    public function __construct(
+        IEmployeeService $employeeService,
+        bool $initializeBase = true
+    ) {
+        if ($initializeBase) {
+            parent::__construct();
+        }
+        $this->employeeService = $employeeService;
+        if ($initializeBase) {
+            $this->requireAuth();
+        }
     }
 
     /**

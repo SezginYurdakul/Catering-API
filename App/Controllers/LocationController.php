@@ -17,11 +17,17 @@ class LocationController extends BaseController
 {
     private ILocationService $locationService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->locationService = $this->getService('locationService');
-        $this->requireAuth();
+    public function __construct(
+        ILocationService $locationService,
+        bool $initializeBase = true
+    ) {
+        if ($initializeBase) {
+            parent::__construct();
+        }
+        $this->locationService = $locationService;
+        if ($initializeBase) {
+            $this->requireAuth();
+        }
     }
 
     /**
