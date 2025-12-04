@@ -6,173 +6,334 @@ namespace Tests\Unit\Controllers;
 
 use PHPUnit\Framework\TestCase;
 use App\Controllers\AuthController;
+use App\Helpers\Logger;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 class AuthControllerTest extends TestCase
 {
-    private AuthController $authController;
+    private string $testSecretKey = 'test_secret_key_for_jwt';
+    private string $testUsername = 'test_admin';
+    private string $testPassword = 'test_password';
+    private string $testPasswordHash;
+    private $mockLogger;
 
     protected function setUp(): void
     {
-        $this->authController = new AuthController();
-        
-        // Clean output buffer before each test
+        // Create password hash for testing
+        $this->testPasswordHash = password_hash($this->testPassword, PASSWORD_DEFAULT);
+
+        // Mock logger
+        $this->mockLogger = $this->createMock(Logger::class);
+
+        // Clean output buffer
         if (ob_get_level()) {
             ob_clean();
         }
-        ob_start();
     }
 
     protected function tearDown(): void
     {
         // Clean up output buffer after each test
         if (ob_get_level()) {
-            ob_end_clean();
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+        }
+
+        // Restore php stream wrapper if it was mocked
+        if (in_array('php', stream_get_wrappers())) {
+            stream_wrapper_restore('php');
         }
     }
 
+    /**
+     * Helper method to create controller with test credentials
+     */
+    private function createController(): AuthController
+    {
+        return new AuthController(
+            $this->testSecretKey,
+            $this->testUsername,
+            $this->testPasswordHash,
+            $this->mockLogger
+        );
+    }
+
+    /**
+     * Helper method to mock php://input
+     */
     private function mockJsonInput(array $data): void
     {
-        // Create a temporary file with JSON data
-        $tempFile = tempnam(sys_get_temp_dir(), 'test_input');
-        file_put_contents($tempFile, json_encode($data));
-        
-        // Mock php://input by overriding the stream
         stream_wrapper_unregister('php');
         stream_wrapper_register('php', TestInputStreamWrapper::class);
         TestInputStreamWrapper::$data = json_encode($data);
     }
 
+    /**
+     * Test successful login with valid credentials
+     */
     public function testLoginWithValidCredentials(): void
     {
-        // Note: This test requires environment variables to be set correctly
-        // and may need to be adjusted based on actual environment setup
-        
         $this->mockJsonInput([
-            'username' => $_ENV['LOGIN_USERNAME'] ?? 'test_admin',
-            'password' => 'test_password' // This should match the unhashed version
+            'username' => $this->testUsername,
+            'password' => $this->testPassword
         ]);
-        
-        // Capture output
+
+        $controller = $this->createController();
+
         ob_start();
-        
-        try {
-            $this->authController->login();
-        } catch (\Exception $e) {
-            // Expected in test environment due to password hash mismatch
-            $this->assertStringContainsString('Invalid', $e->getMessage());
-        }
-        
+        $controller->login();
         $output = ob_get_clean();
-        
-        // Test passes if we reach this point without fatal errors
-        $this->assertTrue(true);
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('token', $data);
+        $this->assertNotEmpty($data['token']);
+
+        // Verify token is valid
+        $decoded = JWT::decode($data['token'], new Key($this->testSecretKey, 'HS256'));
+        $this->assertEquals($this->testUsername, $decoded->user);
     }
 
-    public function testLoginWithInvalidJson(): void
+    /**
+     * Test login with invalid credentials
+     */
+    public function testLoginWithInvalidCredentials(): void
     {
-        // Mock invalid JSON
-        stream_wrapper_unregister('php');
-        stream_wrapper_register('php', TestInputStreamWrapper::class);
-        TestInputStreamWrapper::$data = 'invalid json{';
-        
+        $this->mockJsonInput([
+            'username' => $this->testUsername,
+            'password' => 'wrong_password'
+        ]);
+
+        $controller = $this->createController();
+
         ob_start();
-        
-        try {
-            $this->authController->login();
-        } catch (\Exception $e) {
-            // Expected due to invalid JSON
-        }
-        
+        $controller->login();
         $output = ob_get_clean();
-        $this->assertTrue(true);
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid credentials', $data['error']);
     }
 
+    /**
+     * Test login with wrong username
+     */
+    public function testLoginWithWrongUsername(): void
+    {
+        $this->mockJsonInput([
+            'username' => 'wrong_user',
+            'password' => $this->testPassword
+        ]);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->login();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid credentials', $data['error']);
+    }
+
+    /**
+     * Test login with missing username
+     */
     public function testLoginWithMissingUsername(): void
     {
         $this->mockJsonInput([
-            'password' => 'test_password'
-            // username is missing
+            'password' => $this->testPassword
         ]);
-        
+
+        $controller = $this->createController();
+
         ob_start();
-        
-        try {
-            $this->authController->login();
-        } catch (\Exception $e) {
-            // Expected due to missing username
-        }
-        
+        $controller->login();
         $output = ob_get_clean();
-        $this->assertTrue(true);
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid JSON or missing username/password', $data['error']);
     }
 
+    /**
+     * Test login with missing password
+     */
     public function testLoginWithMissingPassword(): void
     {
         $this->mockJsonInput([
-            'username' => 'test_user'
-            // password is missing
+            'username' => $this->testUsername
         ]);
-        
+
+        $controller = $this->createController();
+
         ob_start();
-        
-        try {
-            $this->authController->login();
-        } catch (\Exception $e) {
-            // Expected due to missing password
-        }
-        
+        $controller->login();
         $output = ob_get_clean();
-        $this->assertTrue(true);
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid JSON or missing username/password', $data['error']);
     }
 
+    /**
+     * Test login with empty credentials
+     */
     public function testLoginWithEmptyCredentials(): void
     {
         $this->mockJsonInput([
             'username' => '',
             'password' => ''
         ]);
-        
+
+        $controller = $this->createController();
+
         ob_start();
-        
-        try {
-            $this->authController->login();
-        } catch (\Exception $e) {
-            // Expected due to empty credentials
-        }
-        
+        $controller->login();
         $output = ob_get_clean();
-        $this->assertTrue(true);
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid credentials', $data['error']);
     }
 
-    public function testJwtTokenGeneration(): void
+    /**
+     * Test login with invalid JSON
+     */
+    public function testLoginWithInvalidJson(): void
     {
-        // Test that JWT token can be generated with correct secret
-        $secretKey = $_ENV['JWT_SECRET_KEY'] ?? 'test_secret_key_for_jwt_tokens_in_testing';
-        
-        $payload = [
-            'user' => 'test_user',
-            'iat' => time(),
-            'exp' => time() + 3600
-        ];
-        
-        $token = JWT::encode($payload, $secretKey, 'HS256');
-        
-        // Verify token can be decoded
-        $decoded = JWT::decode($token, new Key($secretKey, 'HS256'));
-        
-        $this->assertEquals('test_user', $decoded->user);
-        $this->assertIsInt($decoded->iat);
-        $this->assertIsInt($decoded->exp);
+        stream_wrapper_unregister('php');
+        stream_wrapper_register('php', TestInputStreamWrapper::class);
+        TestInputStreamWrapper::$data = 'invalid json{';
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->login();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Invalid JSON or missing username/password', $data['error']);
+    }
+
+    /**
+     * Test JWT token structure
+     */
+    public function testJwtTokenStructure(): void
+    {
+        $this->mockJsonInput([
+            'username' => $this->testUsername,
+            'password' => $this->testPassword
+        ]);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->login();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $token = $data['token'];
+
+        // Decode and verify token structure
+        $decoded = JWT::decode($token, new Key($this->testSecretKey, 'HS256'));
+
+        $this->assertObjectHasProperty('iss', $decoded);
+        $this->assertObjectHasProperty('iat', $decoded);
+        $this->assertObjectHasProperty('exp', $decoded);
+        $this->assertObjectHasProperty('user', $decoded);
+        $this->assertEquals($this->testUsername, $decoded->user);
         $this->assertGreaterThan(time(), $decoded->exp);
     }
 
-    public function testAuthControllerConstructor(): void
+    /**
+     * Test that logger is called on successful login
+     */
+    public function testLoggerCalledOnSuccessfulLogin(): void
     {
-        // Test that constructor doesn't throw exceptions
-        $controller = new AuthController();
-        $this->assertInstanceOf(AuthController::class, $controller);
+        // Set $_SERVER variables for logger
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit Test';
+
+        $this->mockLogger
+            ->expects($this->once())
+            ->method('info')
+            ->with(
+                'Successful login',
+                $this->callback(function ($context) {
+                    return is_array($context) &&
+                           array_key_exists('ip', $context) &&
+                           array_key_exists('user_agent', $context) &&
+                           array_key_exists('time', $context);
+                })
+            );
+
+        $this->mockJsonInput([
+            'username' => $this->testUsername,
+            'password' => $this->testPassword
+        ]);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->login();
+        $output = ob_get_clean();
+
+        // Verify output is not empty
+        $this->assertNotEmpty($output);
+    }
+
+    /**
+     * Test that logger is called on failed login
+     */
+    public function testLoggerCalledOnFailedLogin(): void
+    {
+        // Set $_SERVER variables for logger
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit Test';
+
+        $this->mockLogger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Failed login attempt',
+                $this->callback(function ($context) {
+                    return is_array($context) &&
+                           array_key_exists('ip', $context) &&
+                           array_key_exists('user_agent', $context) &&
+                           array_key_exists('time', $context);
+                })
+            );
+
+        $this->mockJsonInput([
+            'username' => $this->testUsername,
+            'password' => 'wrong_password'
+        ]);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->login();
+        $output = ob_get_clean();
+
+        // Verify output is not empty
+        $this->assertNotEmpty($output);
     }
 }
 
@@ -183,7 +344,7 @@ class TestInputStreamWrapper
 {
     public static $data = '';
     private $position = 0;
-    public $context; // Explicitly defined to avoid PHP 8.2+ deprecation warning
+    public $context;
 
     public function stream_open($path, $mode, $options, &$opened_path)
     {

@@ -7,328 +7,508 @@ namespace Tests\Unit\Controllers;
 use PHPUnit\Framework\TestCase;
 use App\Controllers\LocationController;
 use App\Services\ILocationService;
-use App\Plugins\Di\Factory;
 use App\Models\Location;
-use App\Domain\Exceptions\ResourceInUseException;
-use App\Domain\Exceptions\DatabaseException;
+use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Http\Exceptions\NotFound;
 
 class LocationControllerTest extends TestCase
 {
-    private mixed $mockLocationService;
-    private mixed $mockDi;
+    private $mockLocationService;
 
     protected function setUp(): void
     {
-        // Mock the Dependency Injection container
-        $this->mockDi = $this->createMock(Factory::class);
         $this->mockLocationService = $this->createMock(ILocationService::class);
-
-        $this->mockDi
-            ->method('getShared')
-            ->with('locationService')
-            ->willReturn($this->mockLocationService);
-
-        // Set up environment
-        $_GET = [];
-        $_SERVER = [];
-        $_SESSION = ['user' => 'test_user']; // Mock authenticated user
     }
 
     protected function tearDown(): void
     {
         $_GET = [];
-        $_SERVER = [];
-        $_SESSION = [];
-        
-        // Clean output buffer if any
+
         if (ob_get_level()) {
-            ob_clean();
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+        }
+
+        if (in_array('php', stream_get_wrappers())) {
+            stream_wrapper_restore('php');
         }
     }
 
-    public function testGetAllLocationsValidation(): void
+    private function createController(): LocationController
     {
-        $_GET = [
-            'page' => '1',
-            'per_page' => '10'
-        ];
+        return new LocationController(
+            $this->mockLocationService,
+            false // Skip parent::__construct() and requireAuth()
+        );
+    }
 
-        $mockResponse = [
+    private function mockJsonInput(array $data): void
+    {
+        stream_wrapper_unregister('php');
+        stream_wrapper_register('php', TestLocationInputStreamWrapper::class);
+        TestLocationInputStreamWrapper::$data = json_encode($data);
+    }
+
+    /**
+     * Test getAllLocations with default pagination
+     */
+    public function testGetAllLocationsWithDefaultPagination(): void
+    {
+        $_GET = [];
+
+        $mockLocationsData = [
             'locations' => [
-                new Location(1, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31-20-1234567'),
-                new Location(2, 'Rotterdam', 'Coolsingel 10', '3012 AD', 'NL', '+31-10-7654321')
+                new Location(1, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31201234567'),
+                new Location(2, 'Rotterdam', 'Coolsingel 10', '3012 AD', 'NL', '+31107654321')
             ],
             'pagination' => [
+                'total_items' => 2,
+                'total_pages' => 1,
                 'current_page' => 1,
-                'per_page' => 10,
-                'total_items' => 15,
-                'total_pages' => 2
+                'per_page' => 10
             ]
         ];
 
-        // Test service interaction parameters
-        $this->assertTrue(isset($_GET['page']));
-        $this->assertTrue(isset($_GET['per_page']));
-        $this->assertEquals('1', $_GET['page']);
-        $this->assertEquals('10', $_GET['per_page']);
+        $this->mockLocationService
+            ->expects($this->once())
+            ->method('getAllLocations')
+            ->with(1, 10)
+            ->willReturn($mockLocationsData);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getAllLocations();
+        $output = ob_get_clean();
+
+        $this->assertNotEmpty($output);
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('locations', $data);
+        $this->assertArrayHasKey('pagination', $data);
+        $this->assertCount(2, $data['locations']);
     }
 
-    public function testGetLocationByIdSuccess(): void
+    /**
+     * Test getAllLocations with custom pagination
+     */
+    public function testGetAllLocationsWithCustomPagination(): void
     {
-        $locationId = 1;
-        $mockLocation = new Location($locationId, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31-20-1234567');
+        $_GET = ['page' => '2', 'per_page' => '5'];
+
+        $mockLocationsData = [
+            'locations' => [
+                new Location(6, 'Utrecht', 'Domtoren 1', '3512 JE', 'NL', '+31301234567')
+            ],
+            'pagination' => [
+                'total_items' => 10,
+                'total_pages' => 2,
+                'current_page' => 2,
+                'per_page' => 5
+            ]
+        ];
+
+        $this->mockLocationService
+            ->expects($this->once())
+            ->method('getAllLocations')
+            ->with(2, 5)
+            ->willReturn($mockLocationsData);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getAllLocations();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertEquals(2, $data['pagination']['current_page']);
+        $this->assertEquals(5, $data['pagination']['per_page']);
+    }
+
+    /**
+     * Test getAllLocations with invalid page number
+     */
+    public function testGetAllLocationsWithInvalidPageNumber(): void
+    {
+        $_GET = ['page' => '-1'];
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getAllLocations();
+    }
+
+    /**
+     * Test getAllLocations with page exceeding total pages
+     */
+    public function testGetAllLocationsWithPageExceedingTotalPages(): void
+    {
+        $_GET = ['page' => '10'];
+
+        $mockLocationsData = [
+            'locations' => [],
+            'pagination' => [
+                'total_items' => 5,
+                'total_pages' => 1,
+                'current_page' => 10,
+                'per_page' => 10
+            ]
+        ];
+
+        $this->mockLocationService
+            ->method('getAllLocations')
+            ->willReturn($mockLocationsData);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getAllLocations();
+    }
+
+    /**
+     * Test getLocationById with valid ID
+     */
+    public function testGetLocationByIdWithValidId(): void
+    {
+        $mockLocation = new Location(
+            1,
+            'Amsterdam',
+            'Damrak 1',
+            '1012 JS',
+            'NL',
+            '+31201234567'
+        );
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('getLocationById')
-            ->with($locationId)
+            ->with(1)
             ->willReturn($mockLocation);
 
-        $result = $this->mockLocationService->getLocationById($locationId);
-        
-        $this->assertInstanceOf(Location::class, $result);
-        $this->assertEquals($locationId, $result->id);
-        $this->assertEquals('Amsterdam', $result->city);
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getLocationById(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('location', $data);
+        $this->assertEquals(1, $data['location']['id']);
+        $this->assertEquals('Amsterdam', $data['location']['city']);
     }
 
-    public function testGetLocationByIdNotFound(): void
+    /**
+     * Test getLocationById with non-existent ID
+     */
+    public function testGetLocationByIdWithNonExistentId(): void
     {
-        $locationId = 999;
-
         $this->mockLocationService
             ->expects($this->once())
             ->method('getLocationById')
-            ->with($locationId)
-            ->willReturn(null); // Service returns null for not found
+            ->with(999)
+            ->willReturn(null);
 
-        $result = $this->mockLocationService->getLocationById($locationId);
+        $controller = $this->createController();
 
-        $this->assertNull($result);
+        $this->expectException(NotFound::class);
+        $controller->getLocationById(999);
     }
 
-    public function testCreateLocationJsonValidation(): void
+    /**
+     * Test getLocationById with invalid ID
+     */
+    public function testGetLocationByIdWithInvalidId(): void
     {
-        $mockJsonData = [
-            'city' => 'Utrecht',
-            'address' => 'Domtoren 1',
-            'zip_code' => '3512 JE',
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getLocationById(-1);
+    }
+
+    /**
+     * Test createLocation with valid data
+     */
+    public function testCreateLocationWithValidData(): void
+    {
+        $this->mockJsonInput([
+            'city' => 'Amsterdam',
+            'address' => 'Damrak 1',
+            'zip_code' => '1012 JS',
             'country_code' => 'NL',
-            'phone_number' => '+31-30-1234567'
+            'phone_number' => '+31201234567'
+        ]);
+
+        $mockResult = [
+            'message' => 'Location created successfully',
+            'location' => new Location(1, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31201234567')
         ];
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('createLocation')
-            ->willReturn([
-                'message' => 'Location created successfully',
-                'location' => [
-                    'id' => 10,
-                    'city' => 'Utrecht',
-                    'address' => 'Domtoren 1',
-                    'zip_code' => '3512 JE',
-                    'country_code' => 'NL',
-                    'phone_number' => '+31-30-1234567'
-                ]
-            ]);
+            ->with($this->isInstanceOf(Location::class))
+            ->willReturn($mockResult);
 
-        $result = $this->mockLocationService->createLocation(
-            new Location(0, 'Utrecht', 'Domtoren 1', '3512 JE', 'NL', '+31-30-1234567')
-        );
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('message', $result);
-        $this->assertArrayHasKey('location', $result);
-        $this->assertEquals('Location created successfully', $result['message']);
+        ob_start();
+        $controller->createLocation();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertStringContainsString('created successfully', $data['message']);
     }
 
-    public function testCreateLocationMissingRequiredFields(): void
+    /**
+     * Test createLocation with missing required fields
+     */
+    public function testCreateLocationWithMissingRequiredFields(): void
     {
-        // Test validation for missing required fields
-        $incompleteData = [
-            'city' => 'Utrecht'
+        $this->mockJsonInput([
+            'city' => 'Amsterdam'
             // Missing other required fields
-        ];
+        ]);
 
-        // This would be caught by validation in the actual controller
-        $this->assertArrayNotHasKey('address', $incompleteData);
-        $this->assertArrayNotHasKey('zip_code', $incompleteData);
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->createLocation();
     }
 
-    public function testUpdateLocationSuccess(): void
+    /**
+     * Test createLocation with empty fields
+     */
+    public function testCreateLocationWithEmptyFields(): void
     {
-        $locationId = 1;
-        $mockUpdateData = [
-            'city' => 'Amsterdam Updated',
-            'address' => 'New Address 1',
+        $this->mockJsonInput([
+            'city' => '',
+            'address' => 'Damrak 1',
             'zip_code' => '1012 JS',
             'country_code' => 'NL',
-            'phone_number' => '+31-20-9999999'
+            'phone_number' => '+31201234567'
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->createLocation();
+    }
+
+    /**
+     * Test updateLocation with valid data
+     */
+    public function testUpdateLocationWithValidData(): void
+    {
+        $existingLocation = new Location(1, 'Amsterdam', 'Old Address', '1012 JS', 'NL', '+31201234567');
+
+        $this->mockLocationService
+            ->expects($this->once())
+            ->method('getLocationById')
+            ->with(1)
+            ->willReturn($existingLocation);
+
+        $this->mockJsonInput([
+            'city' => 'Amsterdam',
+            'address' => 'New Address',
+            'zip_code' => '1012 JS',
+            'country_code' => 'NL',
+            'phone_number' => '+31209999999'
+        ]);
+
+        $mockResult = [
+            'message' => 'Location updated successfully',
+            'location' => new Location(1, 'Amsterdam', 'New Address', '1012 JS', 'NL', '+31209999999')
         ];
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('updateLocation')
-            ->willReturn([
-                'message' => 'Location updated successfully',
-                'location' => array_merge($mockUpdateData, ['id' => $locationId])
-            ]);
+            ->with($this->isInstanceOf(Location::class))
+            ->willReturn($mockResult);
 
-        $result = $this->mockLocationService->updateLocation(
-            new Location($locationId, 'Amsterdam Updated', 'New Address 1', '1012 JS', 'NL', '+31-20-9999999')
-        );
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('message', $result);
-        $this->assertEquals('Location updated successfully', $result['message']);
+        ob_start();
+        $controller->updateLocation(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertStringContainsString('updated successfully', $data['message']);
     }
 
-    public function testUpdateLocationNotFound(): void
+    /**
+     * Test updateLocation with partial data
+     */
+    public function testUpdateLocationWithPartialData(): void
     {
-        $locationId = 999;
+        $existingLocation = new Location(1, 'Amsterdam', 'Old Address', '1012 JS', 'NL', '+31201234567');
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('getLocationById')
-            ->with($locationId)
-            ->willReturn(null); // Service returns null for not found
+            ->with(1)
+            ->willReturn($existingLocation);
 
-        $result = $this->mockLocationService->getLocationById($locationId);
+        $this->mockJsonInput([
+            'city' => 'Rotterdam'
+        ]);
 
-        $this->assertNull($result);
-    }
-
-    public function testDeleteLocationSuccess(): void
-    {
-        $locationId = 1;
+        $mockResult = [
+            'message' => 'Location updated successfully',
+            'location' => new Location(1, 'Rotterdam', 'Old Address', '1012 JS', 'NL', '+31201234567')
+        ];
 
         $this->mockLocationService
             ->expects($this->once())
-            ->method('deleteLocation')
-            ->with($locationId)
-            ->willReturn('Location deleted successfully');
+            ->method('updateLocation')
+            ->willReturn($mockResult);
 
-        $result = $this->mockLocationService->deleteLocation($locationId);
+        $controller = $this->createController();
 
-        $this->assertEquals('Location deleted successfully', $result);
+        ob_start();
+        $controller->updateLocation(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
     }
 
-    public function testDeleteLocationNotFound(): void
+    /**
+     * Test updateLocation with non-existent ID
+     */
+    public function testUpdateLocationWithNonExistentId(): void
     {
-        $locationId = 999;
+        $this->mockLocationService
+            ->expects($this->once())
+            ->method('getLocationById')
+            ->with(999)
+            ->willReturn(null);
+
+        $this->mockJsonInput([
+            'city' => 'Amsterdam'
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(NotFound::class);
+        $controller->updateLocation(999);
+    }
+
+    /**
+     * Test updateLocation with no fields provided
+     */
+    public function testUpdateLocationWithNoFieldsProvided(): void
+    {
+        $existingLocation = new Location(1, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31201234567');
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('getLocationById')
-            ->with($locationId)
-            ->willReturn(null); // Service returns null for not found
+            ->with(1)
+            ->willReturn($existingLocation);
 
-        $result = $this->mockLocationService->getLocationById($locationId);
+        $this->mockJsonInput([]);
 
-        $this->assertNull($result);
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->updateLocation(1);
     }
 
-    public function testDeleteLocationUsedByFacilities(): void
+    /**
+     * Test deleteLocation with valid ID
+     */
+    public function testDeleteLocationWithValidId(): void
     {
-        $locationId = 1;
+        $existingLocation = new Location(1, 'Amsterdam', 'Damrak 1', '1012 JS', 'NL', '+31201234567');
+
+        $this->mockLocationService
+            ->expects($this->once())
+            ->method('getLocationById')
+            ->with(1)
+            ->willReturn($existingLocation);
 
         $this->mockLocationService
             ->expects($this->once())
             ->method('deleteLocation')
-            ->with($locationId)
-            ->willThrowException(new ResourceInUseException('Location', $locationId, 'one or more facilities'));
+            ->with(1);
 
-        $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("This Location cannot be deleted because it is currently in use by related one or more facilities");
+        $controller = $this->createController();
 
-        $this->mockLocationService->deleteLocation($locationId);
+        ob_start();
+        $controller->deleteLocation(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertEquals('Location deleted successfully', $data['message']);
     }
 
-    public function testInputSanitization(): void
+    /**
+     * Test deleteLocation with non-existent ID
+     */
+    public function testDeleteLocationWithNonExistentId(): void
     {
-        // Test input sanitization for location data
-        $unsafeCity = '<script>alert("xss")</script>';
-        $unsafeAddress = 'Address<script>malicious</script>';
-        
-        // These would be sanitized by InputSanitizer in the actual controller
-        $this->assertStringContainsString('<script>', $unsafeCity);
-        $this->assertStringContainsString('<script>', $unsafeAddress);
-    }
-
-    public function testPaginationParameterProcessing(): void
-    {
-        // Test pagination parameter processing
-        $_GET = [
-            'page' => '2',
-            'per_page' => '15'
-        ];
-
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $perPage = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 10;
-
-        $this->assertEquals(2, $page);
-        $this->assertEquals(15, $perPage);
-    }
-
-    public function testLocationServiceDependencyInjection(): void
-    {
-        // Test that the service is properly injected
-        $this->assertNotNull($this->mockLocationService);
-        $this->assertInstanceOf(ILocationService::class, $this->mockLocationService);
-    }
-
-    public function testErrorHandlingForServiceExceptions(): void
-    {
-        // Test exception propagation from service layer - using DatabaseException
         $this->mockLocationService
-            ->method('getAllLocations')
-            ->willThrowException(new DatabaseException('SELECT', 'Locations', 'Connection failed'));
+            ->expects($this->once())
+            ->method('getLocationById')
+            ->with(999)
+            ->willReturn(null);
 
-        $this->expectException(DatabaseException::class);
-        $this->expectExceptionMessage('Database operation failed: SELECT on Locations');
+        $controller = $this->createController();
 
-        $this->mockLocationService->getAllLocations(1, 10);
+        $this->expectException(NotFound::class);
+        $controller->deleteLocation(999);
     }
 
-    public function testResponseStructureForListLocations(): void
+    /**
+     * Test deleteLocation with invalid ID
+     */
+    public function testDeleteLocationWithInvalidId(): void
     {
-        $expectedResponse = [
-            'locations' => [],
-            'pagination' => [
-                'current_page' => 1,
-                'per_page' => 10,
-                'total_items' => 0,
-                'total_pages' => 0
-            ]
-        ];
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('locations', $expectedResponse);
-        $this->assertArrayHasKey('pagination', $expectedResponse);
-        $this->assertIsArray($expectedResponse['locations']);
-        $this->assertIsArray($expectedResponse['pagination']);
+        $this->expectException(ValidationException::class);
+        $controller->deleteLocation(-1);
+    }
+}
+
+/**
+ * Mock stream wrapper for testing file_get_contents('php://input')
+ */
+class TestLocationInputStreamWrapper
+{
+    public static $data = '';
+    private $position = 0;
+    public $context;
+
+    public function stream_open($path, $mode, $options, &$opened_path)
+    {
+        $this->position = 0;
+        return true;
     }
 
-    public function testResponseStructureForSingleLocation(): void
+    public function stream_read($count)
     {
-        $expectedResponse = [
-            'id' => 1,
-            'city' => 'Amsterdam',
-            'address' => 'Damrak 1',
-            'zip_code' => '1012 JS',
-            'country_code' => 'NL',
-            'phone_number' => '+31-20-1234567'
-        ];
-
-        $this->assertArrayHasKey('id', $expectedResponse);
-        $this->assertArrayHasKey('city', $expectedResponse);
-        $this->assertArrayHasKey('address', $expectedResponse);
+        $result = substr(self::$data, $this->position, $count);
+        $this->position += strlen($result);
+        return $result;
     }
 
-    public function testResponseStructureForCreateUpdate(): void
+    public function stream_eof()
     {
-        $expectedResponse = [
-            'message' => 'Location created successfully',
-            'location' => []
-        ];
+        return $this->position >= strlen(self::$data);
+    }
 
-        $this->assertArrayHasKey('message', $expectedResponse);
-        $this->assertArrayHasKey('location', $expectedResponse);
+    public function stream_stat()
+    {
+        return [];
+    }
+
+    public function url_stat($path, $flags)
+    {
+        return [];
     }
 }

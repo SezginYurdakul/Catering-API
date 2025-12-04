@@ -1,0 +1,71 @@
+# Development Docker Compose Configuration
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: catering_api_nginx_dev
+    restart: unless-stopped
+    ports:
+      - "80:80"   # HTTP only (no HTTPS in development)
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/conf.d/default.conf  # Use development config
+    depends_on:
+      - app
+    networks:
+      - catering_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: catering_api_app
+    restart: unless-stopped
+    ports:
+      - "8080:80" # Map container's port 80 to host's port 8080 (for local access)
+    volumes:
+      - .:/var/www/html # Mount the project directory to the container
+    depends_on:
+      - db # Ensure the database service starts before the app
+    environment:
+      DB_HOST: ${DB_HOST} # Ensure this parameter is "db" in your enviroment
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - catering_network
+
+  db:
+    image: mysql:8.0
+    container_name: catering_api_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql # Persist database data
+    networks:
+      - catering_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: catering_phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: ${DB_HOST}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8081:80"
+    networks:
+      - catering_network
+
+networks:
+  catering_network:
+    driver: bridge
+
+volumes:
+  db_data:

@@ -151,6 +151,61 @@ class TagServiceTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function testGetTagsByFacilityIdSuccess(): void
+    {
+        $facilityId = 1;
+        $mockTagsData = [
+            ['id' => 1, 'name' => 'Wedding'],
+            ['id' => 2, 'name' => 'Conference']
+        ];
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('getTagsByFacilityId')
+            ->with($facilityId)
+            ->willReturn($mockTagsData);
+
+        $result = $this->tagService->getTagsByFacilityId($facilityId);
+
+        $this->assertIsArray($result);
+        $this->assertCount(2, $result);
+        $this->assertInstanceOf(Tag::class, $result[0]);
+        $this->assertEquals('Wedding', $result[0]->name);
+        $this->assertInstanceOf(Tag::class, $result[1]);
+        $this->assertEquals('Conference', $result[1]->name);
+    }
+
+    public function testGetTagsByFacilityIdEmpty(): void
+    {
+        $facilityId = 999;
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('getTagsByFacilityId')
+            ->with($facilityId)
+            ->willReturn([]);
+
+        $result = $this->tagService->getTagsByFacilityId($facilityId);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function testGetTagsByFacilityIdDatabaseException(): void
+    {
+        $facilityId = 1;
+
+        $this->mockTagRepository
+            ->expects($this->once())
+            ->method('getTagsByFacilityId')
+            ->with($facilityId)
+            ->willThrowException(new \PDOException('Database error'));
+
+        $this->expectException(DatabaseException::class);
+
+        $this->tagService->getTagsByFacilityId($facilityId);
+    }
+
     public function testCreateTagSuccess(): void
     {
         $tag = new Tag(0, 'New Event Type');
