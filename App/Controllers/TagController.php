@@ -18,13 +18,13 @@ class TagController extends BaseController
     private ITagService $tagService;
 
     public function __construct(
-        ITagService $tagService,
+        ?ITagService $tagService = null,
         bool $initializeBase = true
     ) {
         if ($initializeBase) {
             parent::__construct();
         }
-        $this->tagService = $tagService;
+        $this->tagService = $tagService ?? \App\Plugins\Di\Factory::getDi()->getShared('tagService');
         if ($initializeBase) {
             $this->requireAuth();
         }

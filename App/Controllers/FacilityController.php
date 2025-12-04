@@ -20,15 +20,15 @@ class FacilityController extends BaseController
     private ILocationService $locationService;
 
     public function __construct(
-        IFacilityService $facilityService,
-        ILocationService $locationService,
+        ?IFacilityService $facilityService = null,
+        ?ILocationService $locationService = null,
         bool $initializeBase = true
     ) {
         if ($initializeBase) {
             parent::__construct();
         }
-        $this->facilityService = $facilityService;
-        $this->locationService = $locationService;
+        $this->facilityService = $facilityService ?? \App\Plugins\Di\Factory::getDi()->getShared('facilityService');
+        $this->locationService = $locationService ?? \App\Plugins\Di\Factory::getDi()->getShared('locationService');
         if ($initializeBase) {
             $this->requireAuth();
         }

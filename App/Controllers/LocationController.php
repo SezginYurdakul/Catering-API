@@ -18,13 +18,13 @@ class LocationController extends BaseController
     private ILocationService $locationService;
 
     public function __construct(
-        ILocationService $locationService,
+        ?ILocationService $locationService = null,
         bool $initializeBase = true
     ) {
         if ($initializeBase) {
             parent::__construct();
         }
-        $this->locationService = $locationService;
+        $this->locationService = $locationService ?? \App\Plugins\Di\Factory::getDi()->getShared('locationService');
         if ($initializeBase) {
             $this->requireAuth();
         }
