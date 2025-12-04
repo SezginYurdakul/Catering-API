@@ -7,378 +7,482 @@ namespace Tests\Unit\Controllers;
 use PHPUnit\Framework\TestCase;
 use App\Controllers\TagController;
 use App\Services\ITagService;
-use App\Plugins\Di\Factory;
 use App\Models\Tag;
-use App\Domain\Exceptions\DuplicateResourceException;
-use App\Domain\Exceptions\ResourceInUseException;
-use App\Domain\Exceptions\DatabaseException;
 use App\Plugins\Http\Exceptions\ValidationException;
+use App\Plugins\Http\Exceptions\NotFound;
 
 class TagControllerTest extends TestCase
 {
-    private mixed $mockTagService;
-    private mixed $mockDi;
+    private $mockTagService;
 
     protected function setUp(): void
     {
-        // Mock the Dependency Injection container
-        $this->mockDi = $this->createMock(Factory::class);
         $this->mockTagService = $this->createMock(ITagService::class);
-
-        $this->mockDi
-            ->method('getShared')
-            ->with('tagService')
-            ->willReturn($this->mockTagService);
-
-        // Set up environment
-        $_GET = [];
-        $_SERVER = [];
-        $_SESSION = ['user' => 'test_user']; // Mock authenticated user
     }
 
     protected function tearDown(): void
     {
         $_GET = [];
-        $_SERVER = [];
-        $_SESSION = [];
 
-        // Clean output buffer if any
         if (ob_get_level()) {
-            ob_clean();
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+        }
+
+        if (in_array('php', stream_get_wrappers())) {
+            stream_wrapper_restore('php');
         }
     }
 
-    public function testGetAllTagsValidation(): void
+    private function createController(): TagController
     {
-        $_GET = [
-            'page' => '1',
-            'per_page' => '10'
-        ];
+        return new TagController(
+            $this->mockTagService,
+            false // Skip parent::__construct() and requireAuth()
+        );
+    }
 
-        $mockResponse = [
+    private function mockJsonInput(array $data): void
+    {
+        stream_wrapper_unregister('php');
+        stream_wrapper_register('php', TestTagInputStreamWrapper::class);
+        TestTagInputStreamWrapper::$data = json_encode($data);
+    }
+
+    /**
+     * Test getAllTags with default pagination
+     */
+    public function testGetAllTagsWithDefaultPagination(): void
+    {
+        $_GET = [];
+
+        $mockTagsData = [
             'tags' => [
                 new Tag(1, 'Conference'),
                 new Tag(2, 'Wedding'),
                 new Tag(3, 'Business')
             ],
             'pagination' => [
-                'current_page' => 1,
-                'per_page' => 10,
                 'total_items' => 3,
-                'total_pages' => 1
+                'total_pages' => 1,
+                'current_page' => 1,
+                'per_page' => 10
             ]
         ];
 
-        // Test service interaction would be called with correct parameters
-        $this->assertTrue(isset($_GET['page']));
-        $this->assertTrue(isset($_GET['per_page']));
-        $this->assertEquals('1', $_GET['page']);
-        $this->assertEquals('10', $_GET['per_page']);
+        $this->mockTagService
+            ->expects($this->once())
+            ->method('getAllTags')
+            ->with(1, 10)
+            ->willReturn($mockTagsData);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getAllTags();
+        $output = ob_get_clean();
+
+        $this->assertNotEmpty($output);
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('tags', $data);
+        $this->assertArrayHasKey('pagination', $data);
+        $this->assertCount(3, $data['tags']);
     }
 
-    public function testGetTagByIdSuccess(): void
+    /**
+     * Test getAllTags with custom pagination
+     */
+    public function testGetAllTagsWithCustomPagination(): void
     {
-        $tagId = 1;
-        $mockTag = new Tag($tagId, 'Conference');
+        $_GET = ['page' => '2', 'per_page' => '5'];
+
+        $mockTagsData = [
+            'tags' => [
+                new Tag(6, 'Corporate')
+            ],
+            'pagination' => [
+                'total_items' => 10,
+                'total_pages' => 2,
+                'current_page' => 2,
+                'per_page' => 5
+            ]
+        ];
+
+        $this->mockTagService
+            ->expects($this->once())
+            ->method('getAllTags')
+            ->with(2, 5)
+            ->willReturn($mockTagsData);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getAllTags();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertEquals(2, $data['pagination']['current_page']);
+        $this->assertEquals(5, $data['pagination']['per_page']);
+    }
+
+    /**
+     * Test getAllTags with invalid page number
+     */
+    public function testGetAllTagsWithInvalidPageNumber(): void
+    {
+        $_GET = ['page' => '-1'];
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getAllTags();
+    }
+
+    /**
+     * Test getAllTags with page exceeding total pages
+     */
+    public function testGetAllTagsWithPageExceedingTotalPages(): void
+    {
+        $_GET = ['page' => '10'];
+
+        $mockTagsData = [
+            'tags' => [],
+            'pagination' => [
+                'total_items' => 5,
+                'total_pages' => 1,
+                'current_page' => 10,
+                'per_page' => 10
+            ]
+        ];
+
+        $this->mockTagService
+            ->method('getAllTags')
+            ->willReturn($mockTagsData);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getAllTags();
+    }
+
+    /**
+     * Test getTagById with valid ID
+     */
+    public function testGetTagByIdWithValidId(): void
+    {
+        $mockTag = new Tag(1, 'Conference');
 
         $this->mockTagService
             ->expects($this->once())
             ->method('getTagById')
-            ->with($tagId)
+            ->with(1)
             ->willReturn($mockTag);
 
-        $result = $this->mockTagService->getTagById($tagId);
-        
-        $this->assertInstanceOf(Tag::class, $result);
-        $this->assertEquals($tagId, $result->id);
-        $this->assertEquals('Conference', $result->name);
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getTagById(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('tag', $data);
+        $this->assertEquals(1, $data['tag']['id']);
+        $this->assertEquals('Conference', $data['tag']['name']);
     }
 
-    public function testGetTagByIdNotFound(): void
+    /**
+     * Test getTagById with non-existent ID
+     */
+    public function testGetTagByIdWithNonExistentId(): void
     {
-        $tagId = 999;
-
         $this->mockTagService
             ->expects($this->once())
             ->method('getTagById')
-            ->with($tagId)
-            ->willReturn(null); // Service now returns null instead of throwing
+            ->with(999)
+            ->willReturn(null);
 
-        $result = $this->mockTagService->getTagById($tagId);
+        $controller = $this->createController();
 
-        $this->assertNull($result);
+        $this->expectException(NotFound::class);
+        $controller->getTagById(999);
     }
 
-    public function testCreateTagSuccess(): void
+    /**
+     * Test getTagById with invalid ID
+     */
+    public function testGetTagByIdWithInvalidId(): void
     {
-        $mockCreatedTag = [
-            'message' => "Tag 'New Tag' successfully created.",
-            'tag' => new Tag(10, 'New Tag')
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->getTagById(-1);
+    }
+
+    /**
+     * Test createTag with valid data
+     */
+    public function testCreateTagWithValidData(): void
+    {
+        $this->mockJsonInput([
+            'name' => 'Conference'
+        ]);
+
+        $mockResult = [
+            'message' => "Tag 'Conference' successfully created.",
+            'tag' => new Tag(1, 'Conference')
         ];
 
         $this->mockTagService
             ->expects($this->once())
             ->method('createTag')
-            ->willReturn($mockCreatedTag);
+            ->with($this->isInstanceOf(Tag::class))
+            ->willReturn($mockResult);
 
-        $result = $this->mockTagService->createTag(new Tag(0, 'New Tag'));
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('message', $result);
-        $this->assertArrayHasKey('tag', $result);
-        $this->assertInstanceOf(Tag::class, $result['tag']);
-        $this->assertStringContainsString('successfully created', $result['message']);
+        ob_start();
+        $controller->createTag();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertStringContainsString('successfully created', $data['message']);
     }
 
-    public function testCreateTagEmptyName(): void
+    /**
+     * Test createTag with missing name field
+     */
+    public function testCreateTagWithMissingNameField(): void
     {
-        // Test validation for empty tag name
-        $emptyName = '';
-        $whitespaceOnlyName = '   ';
+        $this->mockJsonInput([]);
 
-        // These should fail validation in the actual controller
-        $this->assertEmpty(trim($emptyName));
-        $this->assertEmpty(trim($whitespaceOnlyName));
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->createTag();
     }
 
-    public function testCreateTagDuplicateName(): void
+    /**
+     * Test createTag with empty name
+     */
+    public function testCreateTagWithEmptyName(): void
     {
-        $duplicateTagName = 'Conference';
+        $this->mockJsonInput([
+            'name' => ''
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->createTag();
+    }
+
+    /**
+     * Test createTag with whitespace only name
+     */
+    public function testCreateTagWithWhitespaceOnlyName(): void
+    {
+        $this->mockJsonInput([
+            'name' => '   '
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->createTag();
+    }
+
+    /**
+     * Test updateTag with valid data
+     */
+    public function testUpdateTagWithValidData(): void
+    {
+        $existingTag = new Tag(1, 'Old Name');
 
         $this->mockTagService
             ->expects($this->once())
-            ->method('createTag')
-            ->willThrowException(new DuplicateResourceException('Tag', 'name', $duplicateTagName));
+            ->method('getTagById')
+            ->with(1)
+            ->willReturn($existingTag);
 
-        $this->expectException(DuplicateResourceException::class);
-        $this->expectExceptionMessage("Tag with name 'Conference' already exists");
+        $this->mockJsonInput([
+            'name' => 'New Name'
+        ]);
 
-        $this->mockTagService->createTag(new Tag(0, $duplicateTagName));
-    }
-
-    public function testUpdateTagSuccess(): void
-    {
-        $tagId = 1;
-
-        $mockUpdatedTag = [
-            'message' => "Tag 'Updated Tag Name' successfully updated.",
-            'tag' => new Tag($tagId, 'Updated Tag Name')
+        $mockResult = [
+            'message' => "Tag 'New Name' successfully updated.",
+            'tag' => new Tag(1, 'New Name')
         ];
 
         $this->mockTagService
             ->expects($this->once())
             ->method('updateTag')
-            ->willReturn($mockUpdatedTag);
+            ->with($this->isInstanceOf(Tag::class))
+            ->willReturn($mockResult);
 
-        $result = $this->mockTagService->updateTag(new Tag($tagId, 'Updated Tag Name'));
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('message', $result);
-        $this->assertArrayHasKey('tag', $result);
-        $this->assertInstanceOf(Tag::class, $result['tag']);
-        $this->assertStringContainsString('successfully updated', $result['message']);
+        ob_start();
+        $controller->updateTag(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertStringContainsString('successfully updated', $data['message']);
     }
 
-    public function testUpdateTagNotFound(): void
+    /**
+     * Test updateTag with non-existent ID
+     */
+    public function testUpdateTagWithNonExistentId(): void
     {
-        $tagId = 999;
+        $this->mockTagService
+            ->expects($this->once())
+            ->method('getTagById')
+            ->with(999)
+            ->willReturn(null);
+
+        $this->mockJsonInput([
+            'name' => 'New Name'
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(NotFound::class);
+        $controller->updateTag(999);
+    }
+
+    /**
+     * Test updateTag with invalid ID
+     */
+    public function testUpdateTagWithInvalidId(): void
+    {
+        $this->mockJsonInput([
+            'name' => 'New Name'
+        ]);
+
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->updateTag(-1);
+    }
+
+    /**
+     * Test updateTag with empty name
+     */
+    public function testUpdateTagWithEmptyName(): void
+    {
+        $existingTag = new Tag(1, 'Old Name');
 
         $this->mockTagService
             ->expects($this->once())
             ->method('getTagById')
-            ->with($tagId)
-            ->willReturn(null); // Service returns null for non-existent tag
+            ->with(1)
+            ->willReturn($existingTag);
 
-        $result = $this->mockTagService->getTagById($tagId);
+        $this->mockJsonInput([
+            'name' => ''
+        ]);
 
-        $this->assertNull($result);
+        $controller = $this->createController();
+
+        $this->expectException(ValidationException::class);
+        $controller->updateTag(1);
     }
 
-    public function testDeleteTagSuccess(): void
+    /**
+     * Test deleteTag with valid ID
+     */
+    public function testDeleteTagWithValidId(): void
     {
-        $tagId = 1;
-        $tagToDelete = new Tag($tagId, 'Tag to Delete');
-
-        $this->mockTagService
-            ->expects($this->once())
-            ->method('deleteTag')
-            ->with($this->isInstanceOf(Tag::class))
-            ->willReturn('Tag deleted successfully');
-
-        $result = $this->mockTagService->deleteTag($tagToDelete);
-
-        $this->assertEquals('Tag deleted successfully', $result);
-    }
-
-    public function testDeleteTagNotFound(): void
-    {
-        $tagId = 999;
+        $existingTag = new Tag(1, 'Conference');
 
         $this->mockTagService
             ->expects($this->once())
             ->method('getTagById')
-            ->with($tagId)
-            ->willReturn(null); // Service returns null for non-existent tag
-
-        $result = $this->mockTagService->getTagById($tagId);
-
-        $this->assertNull($result);
-    }
-
-    public function testDeleteTagUsedByFacilities(): void
-    {
-        $tagId = 1;
-        $tagInUse = new Tag($tagId, 'Tag in Use');
+            ->with(1)
+            ->willReturn($existingTag);
 
         $this->mockTagService
             ->expects($this->once())
             ->method('deleteTag')
-            ->with($this->isInstanceOf(Tag::class))
-            ->willThrowException(new ResourceInUseException('Tag', $tagId, 'one or more facilities'));
+            ->with($this->isInstanceOf(Tag::class));
 
-        $this->expectException(ResourceInUseException::class);
-        $this->expectExceptionMessage("This Tag cannot be deleted because it is currently in use by related one or more facilities");
+        $controller = $this->createController();
 
-        $this->mockTagService->deleteTag($tagInUse);
+        ob_start();
+        $controller->deleteTag(1);
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('message', $data);
+        $this->assertEquals('Tag deleted successfully', $data['message']);
     }
 
-    public function testInputSanitizationForTagName(): void
+    /**
+     * Test deleteTag with non-existent ID
+     */
+    public function testDeleteTagWithNonExistentId(): void
     {
-        // Test input sanitization for tag names
-        $unsafeTagName = '<script>alert("xss")</script>';
-        $sqlInjectionAttempt = "'; DROP TABLE tags; --";
-        
-        // These would be sanitized by InputSanitizer in the actual controller
-        $this->assertStringContainsString('<script>', $unsafeTagName);
-        $this->assertStringContainsString('DROP TABLE', $sqlInjectionAttempt);
-    }
-
-    public function testTagNameValidation(): void
-    {
-        // Test various tag name validation scenarios
-        $validTagName = 'Conference';
-        $longTagName = str_repeat('a', 256); // Very long name
-        $specialChars = 'Tag-with_special.chars';
-        $unicodeTag = 'Конференция'; // Unicode characters
-
-        $this->assertIsString($validTagName);
-        $this->assertGreaterThan(255, strlen($longTagName)); // Should be too long
-        $this->assertStringContainsString('-', $specialChars);
-        $this->assertNotEmpty($unicodeTag);
-    }
-
-    public function testPaginationParameterProcessing(): void
-    {
-        // Test pagination parameter processing for tag listing
-        $_GET = [
-            'page' => '3',
-            'per_page' => '20'
-        ];
-
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $perPage = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 10;
-
-        $this->assertEquals(3, $page);
-        $this->assertEquals(20, $perPage);
-    }
-
-    public function testTagServiceDependencyInjection(): void
-    {
-        // Test that the service is properly injected
-        $this->assertNotNull($this->mockTagService);
-        $this->assertInstanceOf(ITagService::class, $this->mockTagService);
-    }
-
-    public function testErrorHandlingForServiceExceptions(): void
-    {
-        // Test exception propagation from service layer - using DatabaseException
         $this->mockTagService
-            ->method('getAllTags')
-            ->willThrowException(new DatabaseException('SELECT', 'Tags', 'Connection failed'));
+            ->expects($this->once())
+            ->method('getTagById')
+            ->with(999)
+            ->willReturn(null);
 
-        $this->expectException(DatabaseException::class);
-        $this->expectExceptionMessage('Database operation failed: SELECT on Tags - Connection failed');
+        $controller = $this->createController();
 
-        $this->mockTagService->getAllTags(1, 10);
+        $this->expectException(NotFound::class);
+        $controller->deleteTag(999);
     }
 
-    public function testResponseStructureForListTags(): void
+    /**
+     * Test deleteTag with invalid ID
+     */
+    public function testDeleteTagWithInvalidId(): void
     {
-        $expectedResponse = [
-            'tags' => [],
-            'pagination' => [
-                'current_page' => 1,
-                'per_page' => 10,
-                'total_items' => 0,
-                'total_pages' => 0
-            ]
-        ];
+        $controller = $this->createController();
 
-        $this->assertArrayHasKey('tags', $expectedResponse);
-        $this->assertArrayHasKey('pagination', $expectedResponse);
-        $this->assertIsArray($expectedResponse['tags']);
-        $this->assertIsArray($expectedResponse['pagination']);
+        $this->expectException(ValidationException::class);
+        $controller->deleteTag(-1);
+    }
+}
+
+/**
+ * Mock stream wrapper for testing file_get_contents('php://input')
+ */
+class TestTagInputStreamWrapper
+{
+    public static $data = '';
+    private $position = 0;
+    public $context;
+
+    public function stream_open($path, $mode, $options, &$opened_path)
+    {
+        $this->position = 0;
+        return true;
     }
 
-    public function testResponseStructureForSingleTag(): void
+    public function stream_read($count)
     {
-        $expectedResponse = [
-            'id' => 1,
-            'name' => 'Conference'
-        ];
-
-        $this->assertArrayHasKey('id', $expectedResponse);
-        $this->assertArrayHasKey('name', $expectedResponse);
-        $this->assertIsInt($expectedResponse['id']);
-        $this->assertIsString($expectedResponse['name']);
+        $result = substr(self::$data, $this->position, $count);
+        $this->position += strlen($result);
+        return $result;
     }
 
-    public function testResponseStructureForCreateUpdate(): void
+    public function stream_eof()
     {
-        $expectedCreateResponse = [
-            'message' => 'Tag created successfully',
-            'tag' => []
-        ];
-
-        $expectedUpdateResponse = [
-            'message' => 'Tag updated successfully',
-            'tag' => []
-        ];
-
-        $expectedDeleteResponse = [
-            'message' => 'Tag deleted successfully'
-        ];
-
-        $this->assertArrayHasKey('message', $expectedCreateResponse);
-        $this->assertArrayHasKey('tag', $expectedCreateResponse);
-        $this->assertArrayHasKey('message', $expectedUpdateResponse);
-        $this->assertArrayHasKey('tag', $expectedUpdateResponse);
-        $this->assertArrayHasKey('message', $expectedDeleteResponse);
+        return $this->position >= strlen(self::$data);
     }
 
-    public function testJsonInputValidation(): void
+    public function stream_stat()
     {
-        // Test JSON input validation
-        $validJson = '{"name": "Valid Tag"}';
-        $invalidJson = '{"name": }';
-        $missingField = '{"description": "Missing name field"}';
-
-        $validData = json_decode($validJson, true);
-        $invalidData = json_decode($invalidJson, true);
-        $missingFieldData = json_decode($missingField, true);
-
-        $this->assertIsArray($validData);
-        $this->assertArrayHasKey('name', $validData);
-        $this->assertNull($invalidData); // Invalid JSON
-        $this->assertArrayNotHasKey('name', $missingFieldData ?? []);
+        return [];
     }
 
-    public function testTagNameSanitization(): void
+    public function url_stat($path, $flags)
     {
-        // Test that tag names are properly sanitized
-        $inputWithSpaces = '  Tag Name  ';
-        $inputWithHtml = 'Tag<b>Name</b>';
-        
-        $trimmed = trim($inputWithSpaces);
-        $this->assertEquals('Tag Name', $trimmed);
-        $this->assertStringContainsString('<b>', $inputWithHtml);
+        return [];
     }
 }

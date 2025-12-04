@@ -7,284 +7,263 @@ namespace Tests\Unit\Controllers;
 use PHPUnit\Framework\TestCase;
 use App\Controllers\FacilityController;
 use App\Services\IFacilityService;
-use App\Plugins\Di\Factory;
+use App\Services\ILocationService;
 use App\Models\Facility;
 use App\Models\Location;
+use App\Plugins\Http\Exceptions\ValidationException;
 
 class FacilityControllerTest extends TestCase
 {
-    private mixed $mockFacilityService;
-    private mixed $mockDi;
-    private FacilityController $facilityController;
+    private $mockFacilityService;
+    private $mockLocationService;
 
     protected function setUp(): void
     {
-        // Mock the Dependency Injection container
-        $this->mockDi = $this->createMock(Factory::class);
         $this->mockFacilityService = $this->createMock(IFacilityService::class);
-        
-        $this->mockDi
-            ->method('getShared')
-            ->with('facilityService')
-            ->willReturn($this->mockFacilityService);
-
-        // Set up environment
-        $_GET = [];
-        $_SERVER = [];
-        $_SESSION = ['user' => 'test_user']; // Mock authenticated user
-        
-        // We can't easily test the constructor due to AuthMiddleware,
-        // so we'll focus on testing the business logic methods separately
+        $this->mockLocationService = $this->createMock(ILocationService::class);
     }
 
-    protected function tearDown(): void
+    /**
+     * Helper method to create a controller with mocked dependencies
+     */
+    private function createController(): FacilityController
     {
-        $_GET = [];
-        $_SERVER = [];
-        $_SESSION = [];
-        
-        // Clean output buffer if any
-        if (ob_get_level()) {
-            ob_clean();
-        }
+        // Pass false to skip BaseController initialization and auth
+        return new FacilityController(
+            $this->mockFacilityService,
+            $this->mockLocationService,
+            false // Skip parent::__construct() and requireAuth()
+        );
     }
 
-    public function testGetFacilitiesValidationSuccess(): void
+    /**
+     * Test getFacilities with default pagination
+     */
+    public function testGetFacilitiesWithDefaultPagination(): void
     {
-        // Test pagination parameter validation
-        $_GET = [
-            'page' => '1',
-            'per_page' => '10'
-        ];
+        // Clear any existing $_GET
+        $_GET = [];
 
-        // Mock service response
-        $mockFacilitiesResponse = [
+        // Mock location
+        $mockLocation = new Location(1, 'Test City', 'Test Address', '12345', 'TR', null);
+
+        // Mock facilities data
+        $mockFacilitiesData = [
             'facilities' => [
-                new Facility(1, 'Conference Hall', new Location(1, 'Amsterdam'), '2023-01-01'),
-                new Facility(2, 'Wedding Hall', new Location(2, 'Rotterdam'), '2023-01-02')
+                new Facility(1, 'Test Facility 1', $mockLocation, '2024-01-01', []),
+                new Facility(2, 'Test Facility 2', $mockLocation, '2024-01-02', [])
             ],
             'pagination' => [
+                'total_items' => 2,
+                'total_pages' => 1,
                 'current_page' => 1,
-                'per_page' => 10,
-                'total_items' => 25,
-                'total_pages' => 3
+                'per_page' => 10
+            ]
+        ];
+
+        // Mock the service call
+        $this->mockFacilityService
+            ->expects($this->once())
+            ->method('getFacilities')
+            ->with(
+                1,      // page
+                10,     // perPage
+                null,   // facilityName
+                null,   // tag
+                null,   // city
+                null,   // country
+                'AND',  // operator
+                [],     // filters
+                null    // query
+            )
+            ->willReturn($mockFacilitiesData);
+
+        $controller = $this->createController();
+
+        // Capture output
+        ob_start();
+        $controller->getFacilities();
+        $output = ob_get_clean();
+
+        // Verify response
+        $this->assertNotEmpty($output);
+        $data = json_decode($output, true);
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('facilities', $data);
+        $this->assertArrayHasKey('pagination', $data);
+        $this->assertCount(2, $data['facilities']);
+        $this->assertEquals(2, $data['pagination']['total_items']);
+    }
+
+    /**
+     * Test getFacilities with custom pagination
+     */
+    public function testGetFacilitiesWithCustomPagination(): void
+    {
+        $_GET = ['page' => '2', 'per_page' => '5'];
+
+        $mockLocation = new Location(1, 'Test City', 'Test Address', '12345', 'TR', null);
+
+        $mockFacilitiesData = [
+            'facilities' => [
+                new Facility(6, 'Test Facility 6', $mockLocation, '2024-01-06', [])
+            ],
+            'pagination' => [
+                'total_items' => 12,
+                'total_pages' => 3,
+                'current_page' => 2,
+                'per_page' => 5
             ]
         ];
 
         $this->mockFacilityService
-            ->expects($this->never()) // We're not actually calling the controller
-            ->method('getFacilities');
+            ->expects($this->once())
+            ->method('getFacilities')
+            ->with(2, 5, null, null, null, null, 'AND', [], null)
+            ->willReturn($mockFacilitiesData);
 
-        // This test verifies the parameters would be processed correctly
-        // In a real controller test, we'd need to mock the HTTP request/response cycle
-        $this->assertTrue(true);
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getFacilities();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertEquals(12, $data['pagination']['total_items']);
+        $this->assertEquals(2, $data['pagination']['current_page']);
     }
 
-    public function testGetFacilitiesWithSearchParameters(): void
+    /**
+     * Test getFacilities with query parameter
+     */
+    public function testGetFacilitiesWithQuery(): void
+    {
+        $_GET = ['query' => 'test search'];
+
+        $mockLocation = new Location(1, 'Test City', 'Test Address', '12345', 'TR', null);
+
+        $mockFacilitiesData = [
+            'facilities' => [
+                new Facility(1, 'Test Facility', $mockLocation, '2024-01-01', [])
+            ],
+            'pagination' => [
+                'total_items' => 1,
+                'total_pages' => 1,
+                'current_page' => 1,
+                'per_page' => 10
+            ]
+        ];
+
+        $this->mockFacilityService
+            ->expects($this->once())
+            ->method('getFacilities')
+            ->with(1, 10, null, null, null, null, 'AND', [], 'test search')
+            ->willReturn($mockFacilitiesData);
+
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getFacilities();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertCount(1, $data['facilities']);
+    }
+
+    /**
+     * Test getFacilities with filters
+     */
+    public function testGetFacilitiesWithFilters(): void
     {
         $_GET = [
-            'page' => '1',
-            'per_page' => '5',
-            'facility_name' => 'Conference',
-            'city' => 'Amsterdam'
+            'facility_name' => 'Test',
+            'city' => 'Istanbul',
+            'filter' => 'facility_name,city',
+            'operator' => 'OR'
         ];
 
-        $mockResponse = [
-            'facilities' => [],
+        $mockLocation = new Location(1, 'Istanbul', 'Kadikoy', '34000', 'TR', null);
+
+        $mockFacilitiesData = [
+            'facilities' => [
+                new Facility(1, 'Test Facility', $mockLocation, '2024-01-01', [])
+            ],
             'pagination' => [
+                'total_items' => 1,
+                'total_pages' => 1,
                 'current_page' => 1,
-                'per_page' => 5,
-                'total_items' => 0,
-                'total_pages' => 0
+                'per_page' => 10
             ]
         ];
 
         $this->mockFacilityService
-            ->expects($this->never()) // We're not actually calling the controller
-            ->method('getFacilities');
-
-        // Verify parameter processing logic
-        $this->assertTrue(true);
-    }
-
-    public function testGetFacilityByIdSuccess(): void
-    {
-        $facilityId = 1;
-        $mockLocation = new Location(1, 'Amsterdam');
-        $mockFacility = new Facility($facilityId, 'Conference Hall', $mockLocation, '2023-01-01');
-
-        $this->mockFacilityService
             ->expects($this->once())
-            ->method('getFacilityById')
-            ->with($facilityId)
-            ->willReturn($mockFacility);
+            ->method('getFacilities')
+            ->with(1, 10, 'Test', null, 'Istanbul', null, 'OR', ['facility_name', 'city'], null)
+            ->willReturn($mockFacilitiesData);
 
-        // Test the service interaction
-        $result = $this->mockFacilityService->getFacilityById($facilityId);
-        
-        $this->assertInstanceOf(Facility::class, $result);
-        $this->assertEquals($facilityId, $result->id);
-        $this->assertEquals('Conference Hall', $result->name);
+        $controller = $this->createController();
+
+        ob_start();
+        $controller->getFacilities();
+        $output = ob_get_clean();
+
+        $data = json_decode($output, true);
+        $this->assertCount(1, $data['facilities']);
     }
 
-    public function testGetFacilityByIdNotFound(): void
+    /**
+     * Test getFacilities with invalid page number
+     */
+    public function testGetFacilitiesWithInvalidPageNumber(): void
     {
-        $facilityId = 999;
+        $_GET = ['page' => '-1'];
 
-        $this->mockFacilityService
-            ->expects($this->once())
-            ->method('getFacilityById')
-            ->with($facilityId)
-            ->willThrowException(new \Exception('Facility not found'));
+        $controller = $this->createController();
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Facility not found');
-
-        $this->mockFacilityService->getFacilityById($facilityId);
+        $this->expectException(ValidationException::class);
+        $controller->getFacilities();
     }
 
-    public function testCreateFacilityJsonValidation(): void
+    /**
+     * Test getFacilities with invalid filter
+     */
+    public function testGetFacilitiesWithInvalidFilter(): void
     {
-        // Test would involve mocking file_get_contents('php://input')
-        // and json_decode validation
-        
-        $mockJsonData = [
-            'name' => 'New Conference Hall',
-            'location_id' => 1,
-            'tags' => ['Conference', 'Business']
-        ];
+        $_GET = ['filter' => 'invalid_filter'];
 
-        // Simulate successful creation
-        $this->mockFacilityService
-            ->expects($this->once())
-            ->method('createFacility')
-            ->willReturn([
-                'message' => 'Facility created successfully',
-                'facility' => new Facility(10, 'New Conference Hall', new Location(1, 'Amsterdam'), '2023-01-01')
-            ]);
+        $controller = $this->createController();
 
-        $result = $this->mockFacilityService->createFacility(
-            new Facility(0, 'New Conference Hall', new Location(1, 'Amsterdam'), '2023-01-01'),
-            ['Conference', 'Business']
-        );
-
-        $this->assertArrayHasKey('message', $result);
-        $this->assertEquals('Facility created successfully', $result['message']);
+        $this->expectException(ValidationException::class);
+        $controller->getFacilities();
     }
 
-    public function testUpdateFacilitySuccess(): void
+    /**
+     * Test getFacilities with page exceeding total pages
+     */
+    public function testGetFacilitiesWithPageExceedingTotalPages(): void
     {
-        $facilityId = 1;
-        $mockJsonData = [
-            'name' => 'Updated Conference Hall',
-            'location_id' => 1,
-            'tags' => ['Conference', 'Updated']
-        ];
+        $_GET = ['page' => '5'];
 
-        $this->mockFacilityService
-            ->expects($this->once())
-            ->method('updateFacility')
-            ->willReturn([
-                'message' => 'Facility updated successfully',
-                'facility' => new Facility($facilityId, 'Updated Conference Hall', new Location(1, 'Amsterdam'), '2023-01-01')
-            ]);
+        $mockLocation = new Location(1, 'Test City', 'Test Address', '12345', 'TR', null);
 
-        $result = $this->mockFacilityService->updateFacility(
-            new Facility($facilityId, 'Updated Conference Hall', new Location(1, 'Amsterdam'), '2023-01-01'),
-            ['Conference', 'Updated']
-        );
-
-        $this->assertArrayHasKey('message', $result);
-        $this->assertEquals('Facility updated successfully', $result['message']);
-    }
-
-    public function testDeleteFacilitySuccess(): void
-    {
-        $facilityId = 1;
-
-        $this->mockFacilityService
-            ->expects($this->once())
-            ->method('deleteFacility')
-            ->with($facilityId)
-            ->willReturn(['message' => 'Facility deleted successfully']);
-
-        $result = $this->mockFacilityService->deleteFacility($facilityId);
-
-        $this->assertArrayHasKey('message', $result);
-        $this->assertEquals('Facility deleted successfully', $result['message']);
-    }
-
-    public function testInputSanitization(): void
-    {
-        // Test input sanitization for various parameters
-        $unsafeInput = '<script>alert("xss")</script>';
-        $expectedSafe = '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;';
-        
-        // This would test InputSanitizer integration
-        $this->assertNotEquals($unsafeInput, $expectedSafe);
-        $this->assertStringContainsString('&lt;', $expectedSafe);
-    }
-
-    public function testPaginationValidation(): void
-    {
-        // Test various pagination scenarios
-        $validPagination = [
-            'page' => 1,
-            'per_page' => 10
-        ];
-
-        $invalidPagination = [
-            'page' => -1,
-            'per_page' => 0
-        ];
-
-        // These would be validated by Validator::pagination()
-        $this->assertGreaterThan(0, $validPagination['page']);
-        $this->assertGreaterThan(0, $validPagination['per_page']);
-        $this->assertLessThan(0, $invalidPagination['page']); // Should fail validation
-    }
-
-    public function testFacilityServiceDependencyInjection(): void
-    {
-        // Test that the service is properly injected
-        $this->assertNotNull($this->mockFacilityService);
-        $this->assertInstanceOf(IFacilityService::class, $this->mockFacilityService);
-    }
-
-    public function testControllerResponseStructure(): void
-    {
-        // Test expected response structure for different operations
-        $expectedListResponse = [
+        $mockFacilitiesData = [
             'facilities' => [],
             'pagination' => [
-                'current_page' => 1,
-                'per_page' => 10,
-                'total_items' => 0,
-                'total_pages' => 0
+                'total_items' => 15,
+                'total_pages' => 2,
+                'current_page' => 5,
+                'per_page' => 10
             ]
         ];
 
-        $expectedCreateResponse = [
-            'message' => 'Facility created successfully',
-            'facility' => []
-        ];
-
-        $this->assertArrayHasKey('facilities', $expectedListResponse);
-        $this->assertArrayHasKey('pagination', $expectedListResponse);
-        $this->assertArrayHasKey('message', $expectedCreateResponse);
-        $this->assertArrayHasKey('facility', $expectedCreateResponse);
-    }
-
-    public function testErrorHandling(): void
-    {
-        // Test exception handling
         $this->mockFacilityService
             ->method('getFacilities')
-            ->willThrowException(new \Exception('Database error'));
+            ->willReturn($mockFacilitiesData);
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Database error');
+        $controller = $this->createController();
 
-        $this->mockFacilityService->getFacilities(1, 10);
+        $this->expectException(ValidationException::class);
+        $controller->getFacilities();
     }
 }
